@@ -8,9 +8,9 @@ import { BookFiltersAside } from "../components/BookFilterAside";
 
 const TAKE = 5;
 
-// range limits
-const MIN = 0;
-const MAX = 1000;
+// // range limits
+// const MIN = 0;
+// const MAX = 100000;
 
 export const BooksPage = () => {
   const [page, setPage] = useState(1);
@@ -27,9 +27,9 @@ export const BooksPage = () => {
   // filters
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
-  const [price, setPrice] = useState(""); // exact
-  const [minPrice, setMinPrice] = useState<number>(MIN);
-  const [maxPrice, setMaxPrice] = useState<number>(MAX);
+  const [price, setPrice] = useState(""); 
+  // const [minPrice, setMinPrice] = useState<number>(MIN);
+  // const [maxPrice, setMaxPrice] = useState<number>(MAX);
 
   const exactPrice = useMemo(() => {
     const v = price.trim();
@@ -45,12 +45,12 @@ export const BooksPage = () => {
 
     name: name.trim() || undefined,
 
-    // exact has priority
+    
     price: exactPrice,
 
-    // send range only if exact empty
-    minPrice: exactPrice === undefined ? minPrice : undefined,
-    maxPrice: exactPrice === undefined ? maxPrice : undefined,
+    
+    // minPrice: exactPrice === undefined ? minPrice : undefined,
+    // maxPrice: exactPrice === undefined ? maxPrice : undefined,
   });
 
   const totalPages = Math.max(books?.pages ?? 1, 1);
@@ -90,8 +90,8 @@ export const BooksPage = () => {
     setSearch("");
     setName("");
     setPrice("");
-    setMinPrice(MIN);
-    setMaxPrice(MAX);
+    // setMinPrice(MIN);
+    // setMaxPrice(MAX);
     setPage(1);
   };
 
@@ -194,12 +194,12 @@ export const BooksPage = () => {
         setName={setName}
         price={price}
         setPrice={setPrice}
-        minPrice={minPrice}
-        setMinPrice={setMinPrice}
-        maxPrice={maxPrice}
-        setMaxPrice={setMaxPrice}
-        MIN={MIN}
-        MAX={MAX}
+        // minPrice={minPrice}
+        // setMinPrice={setMinPrice}
+        // maxPrice={maxPrice}
+        // setMaxPrice={setMaxPrice}
+        // MIN={MIN}
+        // MAX={MAX}
         setPage={setPage}
       />
 

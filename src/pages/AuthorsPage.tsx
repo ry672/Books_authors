@@ -6,6 +6,7 @@ import { AuthorFiltersAside } from "../components/AuthorFilterAside";
 import { UpdateAuthorAside } from "../components/UpdateAuthor";
 import defaultAvatar from "../images/icons8-user-default-64.png"
 import { useNavigate } from "react-router-dom";
+
 const TAKE = 5;
 
 export const AuthorPage = () => {

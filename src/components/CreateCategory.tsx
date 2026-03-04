@@ -1,36 +1,60 @@
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import { useEffect } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useDispatch } from "react-redux";
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
 import { usePostCategoryMutation } from "../store/Api/CategoryApi";
 import { setCategory } from "../store/Slice/categorySlice";
+import * as yup from "yup";
+import { bookApi } from "../store/Api/BookApi";
 
 type SubmitForm = {
   name: string;
 };
 
-export const CreateCategoryAside = ({ onSuccess }: { onSuccess?: () => void }) => {
-  const [postCategory, { data, isLoading, isSuccess, error }] =
-    usePostCategoryMutation();
+const schema = yup.object({
+  name: yup
+    .string()
+    .trim()
+    .min(2, "minimum 2 string")
+    .max(20, "maximum 20 characters")
+    .required("Fill"),
+});
 
+export const CreateCategoryAside = ({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+}) => {
+  const [postCategory, { isLoading, error }] = usePostCategoryMutation();
   const dispatch = useDispatch();
 
-  const { handleSubmit, control, reset } = useForm<SubmitForm>({
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<SubmitForm>({
     defaultValues: { name: "" },
+    resolver: yupResolver(schema),
+    mode: "onBlur",
   });
 
-  useEffect(() => {
-    if (isSuccess && data) {
-      dispatch(setCategory(data));
-      reset();
-      onSuccess?.();
-    }
-  }, [isSuccess, data, dispatch, reset, onSuccess]);
+  const backendMessage =
+    error && typeof error === "object" && error !== null && "data" in error
+      ? (error as any).data?.message
+      : null;
 
   const onSubmit: SubmitHandler<SubmitForm> = async (formData) => {
     try {
-      await postCategory(formData).unwrap();
+      const created = await postCategory(formData).unwrap();
+
+      dispatch(setCategory(created));
+
+      dispatch(bookApi.util.invalidateTags([{ type: "Books", id: "LIST" }]));
+
+      reset();
+      onSuccess?.();
     } catch (e) {
       console.log("Create category failed:", e);
     }
@@ -42,13 +66,24 @@ export const CreateCategoryAside = ({ onSuccess }: { onSuccess?: () => void }) =
         name="name"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
-            classId="name"
-            placeholder="Fantasy"
-            textArea="Category name"
-          />
+          <>
+            <InputApp
+              {...field}
+              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              classId="name"
+              placeholder="Fantasy"
+              textArea="Category name"
+            />
+
+ 
+            {errors.name && (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            )}
+
+            {backendMessage && (
+              <p className="text-xs text-red-600">{String(backendMessage)}</p>
+            )}
+          </>
         )}
       />
 
@@ -56,8 +91,6 @@ export const CreateCategoryAside = ({ onSuccess }: { onSuccess?: () => void }) =
         buttonText={isLoading ? "Creating..." : "Create"}
         buttonType="submit"
       />
-
-      {error && <p>Failed to create category</p>}
     </form>
   );
 };

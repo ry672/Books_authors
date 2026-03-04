@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import { useGetAuthorByIdQuery, usePatchAuthorMutation } from "../store/Api/AuthorApi";
+import { yupResolver } from "@hookform/resolvers/yup";
+import {
+  useGetAuthorByIdQuery,
+  usePatchAuthorMutation,
+} from "../store/Api/AuthorApi";
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
+import * as yup from "yup";
 
 type FormValues = {
   name: string;
   full_name: string;
   description: string;
-  country?: string;
-  file?: File | null;
+  country: string;
 };
+
+const schema = yup.object({
+  name: yup.string().trim().min(2, "minimum 2 string").required("Fill"),
+  full_name: yup.string().trim().min(3, "minimum 3 string").required("Fill"),
+  description: yup.string().trim().min(5, "minimum 5 string").required("Fill"),
+  country: yup.string().trim().min(2, "minimum 2 string").required("Fill"),
+});
 
 export const UpdateAuthorAside = ({
   id,
@@ -25,14 +36,20 @@ export const UpdateAuthorAside = ({
 
   const [file, setFile] = useState<File | null>(null);
 
-  const { handleSubmit, control, reset } = useForm<FormValues>({
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: {
       name: "",
       full_name: "",
       description: "",
       country: "",
-      file: null,
     },
+    resolver: yupResolver(schema),
+    mode: "onBlur",
   });
 
   useEffect(() => {
@@ -42,20 +59,16 @@ export const UpdateAuthorAside = ({
       full_name: author.full_name ?? "",
       description: author.description ?? "",
       country: author.country ?? "",
-      file: null,
     });
+    setFile(null);
   }, [author, reset]);
-  
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
       await patchAuthor({
         id,
         data: {
-          name: values.name,
-          full_name: values.full_name,
-          description: values.description,
-          country: values.country,
+          ...values,
           file: file ?? undefined,
         },
       }).unwrap();
@@ -66,6 +79,15 @@ export const UpdateAuthorAside = ({
     }
   };
 
+  // ✅ backend message from RTK Query error
+  const backendMessage =
+    saveError &&
+    typeof saveError === "object" &&
+    saveError !== null &&
+    "data" in saveError
+      ? (saveError as any).data?.message
+      : null;
+
   if (isLoading) return <div>Loading...</div>;
   if (isError || !author) return <div>Author not found</div>;
 
@@ -75,13 +97,18 @@ export const UpdateAuthorAside = ({
         name="name"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="name"
-            classId="name"
-            placeholder="Author name"
-            textArea="Name"
-          />
+          <>
+            <InputApp
+              {...field}
+              className="name"
+              classId="name"
+              placeholder="Author name"
+              textArea="Name"
+            />
+            {errors.name && (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            )}
+          </>
         )}
       />
 
@@ -89,13 +116,18 @@ export const UpdateAuthorAside = ({
         name="full_name"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="full_name"
-            classId="full_name"
-            placeholder="Full name"
-            textArea="Full name"
-          />
+          <>
+            <InputApp
+              {...field}
+              className="full_name"
+              classId="full_name"
+              placeholder="Full name"
+              textArea="Full name"
+            />
+            {errors.full_name && (
+              <p className="text-xs text-red-600">{errors.full_name.message}</p>
+            )}
+          </>
         )}
       />
 
@@ -103,13 +135,18 @@ export const UpdateAuthorAside = ({
         name="country"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="country"
-            classId="country"
-            placeholder="Country"
-            textArea="Country"
-          />
+          <>
+            <InputApp
+              {...field}
+              className="country"
+              classId="country"
+              placeholder="Country"
+              textArea="Country"
+            />
+            {errors.country && (
+              <p className="text-xs text-red-600">{errors.country.message}</p>
+            )}
+          </>
         )}
       />
 
@@ -117,15 +154,26 @@ export const UpdateAuthorAside = ({
         name="description"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="description"
-            classId="description"
-            placeholder="About author..."
-            textArea="Description"
-          />
+          <>
+            <InputApp
+              {...field}
+              className="description"
+              classId="description"
+              placeholder="About author..."
+              textArea="Description"
+            />
+            {errors.description && (
+              <p className="text-xs text-red-600">
+                {errors.description.message}
+              </p>
+            )}
+          </>
         )}
       />
+
+      {backendMessage && (
+        <p className="text-xs text-red-600">{String(backendMessage)}</p>
+      )}
 
       <div className="pt-2">
         <label className="text-sm">Avatar</label>
@@ -138,9 +186,10 @@ export const UpdateAuthorAside = ({
         {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
       </div>
 
-      <ButtonApp buttonText={isSaving ? "Saving..." : "Update"} buttonType="submit" />
-
-      {saveError && <p>Failed to update author</p>}
+      <ButtonApp
+        buttonText={isSaving ? "Saving..." : "Update"}
+        buttonType="submit"
+      />
     </form>
   );
 };

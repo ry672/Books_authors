@@ -24,15 +24,22 @@ export type GetCategoriesArgs = {
   page?: number;
   take?: number;
 };
+export interface CategoryPayload {
+  count: number;
+  page: number;
+  take: number;
+  pages: number;
+  rows: CategoryResponse[];
+}
 
 const API_BASE_URL = import.meta.env.VITE_EXCHANGE_API_BASE_URL;
 
 export const categoryApi = createApi({
   reducerPath: "categoryApi",
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-  tagTypes: ["Categories", "Category"],
+  tagTypes: ["Categories", "Category", "Books"],
   endpoints: (builder) => ({
-    getCategory: builder.query<CategoryResponse[], GetCategoriesArgs>({
+    getCategory: builder.query<CategoryPayload, GetCategoriesArgs>({
       query: ({ search, name, page, take }) => ({
         url: "/category",
         method: "GET",
@@ -42,8 +49,10 @@ export const categoryApi = createApi({
           ...(page ? { page } : {}),
           ...(take ? { take } : {}),
         },
+        page,
+        take
       }),
-      providesTags: ["Categories"],
+      providesTags: ["Categories", "Books"],
       keepUnusedDataFor: 300,
     }),
 
@@ -58,22 +67,22 @@ export const categoryApi = createApi({
 
     postCategory: builder.mutation<CategoryResponse, CategoryRequest>({
       query: (payload) => ({
-        url: "/category", // ✅ was /books
+        url: "/category", 
         method: "POST",
         body: payload,
       }),
-      invalidatesTags: ["Categories"],
+      invalidatesTags: ["Categories", "Books"],
     }),
 
     patchCategory: builder.mutation<CategoryResponse, PatchCategoryArgs>({
       query: ({ id, data }) => ({
-        url: `/category/${id}`, // ✅ was /books/:id
+        url: `/category/${id}`,
         method: "PATCH",
         body: data,
       }),
       invalidatesTags: (_res, _err, { id }) => [
         "Categories",
-        { type: "Category", id },
+        { type: "Category", id },{type: "Books", id: "List"}
       ],
     }),
 
@@ -82,7 +91,7 @@ export const categoryApi = createApi({
         url: `/category/${id}/soft`, 
         method: "DELETE",
       }),
-      invalidatesTags: ["Categories"],
+      invalidatesTags: ["Categories", "Books"],
     }),
   }),
 });

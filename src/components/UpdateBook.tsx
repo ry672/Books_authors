@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { useGetBookByIdQuery, usePatchBookMutation } from "../store/Api/BookApi";
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
@@ -13,6 +15,31 @@ type FormValues = {
   categoryId: number | null;
 };
 
+const httpRegex =
+  /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
+
+const schema: yup.ObjectSchema<FormValues> = yup.object({
+  name: yup.string().trim().min(2, "minimum 2 string").required("Fill"),
+  link: yup
+    .string()
+    .trim()
+    .matches(httpRegex, "Invalid link it should be https://example.com")
+    .required("Fill"),
+  price: yup
+    .number()
+    .typeError("Price must be a number")
+    .min(1, "Min price is 1")
+    .required("Fill"),
+  description: yup.string().trim().min(20, "minimum 20 string").required("Fill"),
+
+
+  categoryId: yup
+    .number()
+    .nullable()
+    .defined() 
+    .typeError("Choose category"),
+});
+
 export const UpdateBookAside = ({
   id,
   onSuccess,
@@ -20,10 +47,18 @@ export const UpdateBookAside = ({
   id: number;
   onSuccess?: () => void;
 }) => {
-  const { data: book, isLoading: isBookLoading, isError } = useGetBookByIdQuery(id);
-  const [patchBook, { isLoading: isSaving, error: saveError }] = usePatchBookMutation();
+  const { data: book, isLoading: isBookLoading, isError } =
+    useGetBookByIdQuery(id);
 
-  const { handleSubmit, control, reset } = useForm<FormValues>({
+  const [patchBook, { isLoading: isSaving, error: saveError }] =
+    usePatchBookMutation();
+
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: {
       name: "",
       link: "",
@@ -31,9 +66,10 @@ export const UpdateBookAside = ({
       description: "",
       categoryId: null,
     },
+    resolver: yupResolver(schema) as any, 
+    mode: "onBlur",
   });
 
- 
   useEffect(() => {
     if (!book) return;
     reset({
@@ -54,8 +90,8 @@ export const UpdateBookAside = ({
           link: values.link,
           price: Number(values.price),
           description: values.description,
-          categoryId: values.categoryId ? Number(values.categoryId) : undefined,
-          authorId: book?.authorId, // keep same author
+          categoryId: values.categoryId ?? undefined,
+          authorId: book?.authorId,
         },
       }).unwrap();
 
@@ -64,6 +100,14 @@ export const UpdateBookAside = ({
       console.log("Update book failed:", e);
     }
   };
+
+  const backendMessage =
+    saveError &&
+    typeof saveError === "object" &&
+    saveError !== null &&
+    "data" in saveError
+      ? (saveError as any).data?.message
+      : null;
 
   if (isBookLoading) return <div>Loading...</div>;
   if (isError || !book) return <div>Book not found</div>;
@@ -74,7 +118,10 @@ export const UpdateBookAside = ({
         name="name"
         control={control}
         render={({ field }) => (
-          <InputApp {...field} className="name" classId="name" placeholder="Clean Code" textArea="Name" />
+          <>
+            <InputApp {...field} className="name" classId="name" placeholder="Clean Code" textArea="Name" />
+            {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
+          </>
         )}
       />
 
@@ -82,7 +129,10 @@ export const UpdateBookAside = ({
         name="link"
         control={control}
         render={({ field }) => (
-          <InputApp {...field} className="link" classId="link" placeholder="https://example.com" textArea="Link" />
+          <>
+            <InputApp {...field} className="link" classId="link" placeholder="https://example.com" textArea="Link" />
+            {errors.link && <p className="text-xs text-red-600">{errors.link.message}</p>}
+          </>
         )}
       />
 
@@ -90,14 +140,17 @@ export const UpdateBookAside = ({
         name="price"
         control={control}
         render={({ field }) => (
-          <InputApp
-            {...field}
-            className="price"
-            classId="price"
-            placeholder="100"
-            textArea="Price"
-            onChange={(e: any) => field.onChange(Number(e.target.value))}
-          />
+          <>
+            <InputApp
+              {...field}
+              className="price"
+              classId="price"
+              placeholder="100"
+              textArea="Price"
+              onChange={(e: any) => field.onChange(Number(e.target.value))}
+            />
+            {errors.price && <p className="text-xs text-red-600">{errors.price.message}</p>}
+          </>
         )}
       />
 
@@ -105,15 +158,25 @@ export const UpdateBookAside = ({
         name="description"
         control={control}
         render={({ field }) => (
-          <InputApp {...field} className="description" classId="description" placeholder="About book..." textArea="Description" />
+          <>
+            <InputApp {...field} className="description" classId="description" placeholder="About book..." textArea="Description" />
+            {errors.description && (
+              <p className="text-xs text-red-600">{errors.description.message}</p>
+            )}
+          </>
         )}
       />
 
-      <LabelCategories control={control} name="categoryId" />
+      <LabelCategories<FormValues> control={control} name="categoryId" />
+      {errors.categoryId && (
+        <p className="text-xs text-red-600">{String(errors.categoryId.message)}</p>
+      )}
+
+      {backendMessage && (
+        <p className="text-xs text-red-600">{String(backendMessage)}</p>
+      )}
 
       <ButtonApp buttonText={isSaving ? "Saving..." : "Update"} buttonType="submit" />
-
-      {saveError && <p>Failed to update book</p>}
     </form>
   );
 };

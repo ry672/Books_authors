@@ -14,14 +14,14 @@ type Props = {
   price: string;
   setPrice: (v: string) => void;
 
-  minPrice: number;
-  setMinPrice: (v: number) => void;
+  // minPrice: number;
+  // setMinPrice: (v: number) => void;
 
-  maxPrice: number;
-  setMaxPrice: (v: number) => void;
+  // maxPrice: number;
+  // setMaxPrice: (v: number) => void;
 
-  MIN: number;
-  MAX: number;
+  // MIN: number;
+  // MAX: number;
 
   setPage: (v: number) => void;
 };
@@ -36,17 +36,17 @@ export const BookFiltersAside: React.FC<Props> = ({
   setName,
   price,
   setPrice,
-  minPrice,
-  setMinPrice,
-  maxPrice,
-  setMaxPrice,
-  MIN,
-  MAX,
+  // minPrice,
+  // setMinPrice,
+  // maxPrice,
+  // setMaxPrice,
+  // MIN,
+  // MAX,
   setPage,
 }) => {
   if (!isOpen) return null;
 
-  const exactPriceActive = price.trim().length > 0;
+  // const exactPriceActive = price.trim().length > 0;
 
   return (
     <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
@@ -116,7 +116,7 @@ export const BookFiltersAside: React.FC<Props> = ({
       </div>
 
       {/* Range */}
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <div className="text-sm font-medium">
           Price range: {minPrice} – {maxPrice}
           {exactPriceActive && (
@@ -163,9 +163,9 @@ export const BookFiltersAside: React.FC<Props> = ({
             }}
             className="w-full"
           />
-          <span className="text-xs w-12 text-right">{maxPrice}</span>
-        </div>
-      </div>
+          <span className="text-xs w-12 text-right">{maxPrice}</span> */}
+        {/* </div> */}
+      {/* </div> */}
     </aside>
   );
 };

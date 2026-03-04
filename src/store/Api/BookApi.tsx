@@ -2,7 +2,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { AuthorResponse } from "./AuthorApi";
 import type { CategoryResponse } from "./CategoryApi";
 
-
 export interface BookResponse {
   id: number;
   name: string;
@@ -41,8 +40,8 @@ export type GetBooksArgs = {
   take: number;
   name?: string;
   price?: number;
-  minPrice?: number;   
-  maxPrice?: number;  
+  minPrice?: number;
+  maxPrice?: number;
 };
 
 export type PatchBookArgs = {
@@ -55,32 +54,35 @@ const API_BASE_URL = import.meta.env.VITE_EXCHANGE_API_BASE_URL;
 export const bookApi = createApi({
   reducerPath: "bookApi",
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-
-  tagTypes: ["Books", "Book"],
-
+  tagTypes: ["Books", "Book", "Category"],
   endpoints: (builder) => ({
     getBook: builder.query<BookPayload, GetBooksArgs>({
-      query: ({ search, page, take, name, price, minPrice, maxPrice }) => ({
+      query: ({ search, page, take, name, price }) => ({
         url: "/books",
         method: "GET",
         params: {
           ...(search ? { search } : {}),
           ...(name ? { name } : {}),
           ...(price !== undefined ? { price } : {}),
-          ...(minPrice !== undefined ? { minPrice } : {}),
-          ...(maxPrice !== undefined ? { maxPrice } : {}),
+          // ...(minPrice !== undefined ? { minPrice } : {}),
+          // ...(maxPrice !== undefined ? { maxPrice } : {}),
           page,
           take,
         },
       }),
-      providesTags: ["Books"],
+
+      providesTags: (res) =>
+        res
+          ? [
+              { type: "Books", id: "LIST" },
+              ...res.rows.map((b) => ({ type: "Book" as const, id: b.id })),
+              { type: "Category", id: "LIST" }, 
+            ]
+          : [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }],
     }),
 
     getBookById: builder.query<BookResponse, number>({
-      query: (id) => ({
-        url: `/books/${id}`,
-        method: "GET",
-      }),
+      query: (id) => ({ url: `/books/${id}`, method: "GET" }),
       providesTags: (_res, _err, id) => [{ type: "Book", id }],
     }),
 
@@ -90,7 +92,8 @@ export const bookApi = createApi({
         method: "POST",
         body: payload,
       }),
-      invalidatesTags: ["Books"],
+
+      invalidatesTags: [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }],
     }),
 
     patchBook: builder.mutation<BookResponse, PatchBookArgs>({
@@ -99,15 +102,19 @@ export const bookApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (_res, _err, { id }) => ["Books", { type: "Book", id }],
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Books", id: "LIST" },
+        { type: "Book", id },
+      ],
     }),
-    deleteBook: builder.mutation<{message: string}, number> ({
+
+    deleteBook: builder.mutation<{ message: string }, number>({
       query: (id) => ({
         url: `/books/${id}/soft`,
-        method: "DELETE"
+        method: "DELETE",
       }),
-      invalidatesTags: ["Books"],
-    })
+      invalidatesTags: [{ type: "Books", id: "LIST" }],
+    }),
   }),
 });
 
@@ -116,5 +123,5 @@ export const {
   useGetBookByIdQuery,
   usePostBookMutation,
   usePatchBookMutation,
-  useDeleteBookMutation
+  useDeleteBookMutation,
 } = bookApi;

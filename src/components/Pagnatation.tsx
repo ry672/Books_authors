@@ -3,17 +3,20 @@ type Props = {
   totalPages: number;
   onPrev: () => void;
   onNext: () => void;
-  onPage: (p: number) => void; // ✅ new
+  onPage: (p: number) => void;
 };
 
-const getPages = (page: number, totalPages: number) => {
-  // show all if small amount
+type PageItem = number | "...";
+
+const getPages = (page: number, totalPages: number): PageItem[] => {
+  if (totalPages <= 0) return [];
+
+ 
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  // big: use dots
-  const pages: (number | "...")[] = [];
+  const pages: PageItem[] = [];
 
   pages.push(1);
 
@@ -32,13 +35,17 @@ const getPages = (page: number, totalPages: number) => {
 };
 
 export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) => {
-  const items = getPages(page, totalPages);
+  const safeTotalPages = Math.max(totalPages, 1);
+  const safePage = Math.min(Math.max(page, 1), safeTotalPages);
+
+  const items = getPages(safePage, safeTotalPages);
 
   return (
     <div className="flex items-center gap-2 my-5 flex-wrap">
       <button
+        type="button"
         onClick={onPrev}
-        disabled={page <= 1}
+        disabled={safePage <= 1}
         className="px-3 py-2 bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white rounded-md disabled:opacity-50 disabled:hover:bg-gray-200 disabled:hover:text-gray-600"
       >
         Previous
@@ -51,11 +58,13 @@ export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) 
           </span>
         ) : (
           <button
-            key={it}
+            type="button"
+            key={`page-${it}`}
+            disabled={it === safePage}
             onClick={() => onPage(it)}
             className={
-              it === page
-                ? "px-3 py-2 rounded-md bg-blue-500 text-white font-semibold"
+              it === safePage
+                ? "px-3 py-2 rounded-md bg-blue-500 text-white font-semibold disabled:opacity-100"
                 : "px-3 py-2 rounded-md bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white"
             }
           >
@@ -65,8 +74,9 @@ export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) 
       )}
 
       <button
+        type="button"
         onClick={onNext}
-        disabled={page >= totalPages}
+        disabled={safePage >= safeTotalPages}
         className="px-3 py-2 bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white rounded-md disabled:opacity-50 disabled:hover:bg-gray-200 disabled:hover:text-gray-600"
       >
         Next
