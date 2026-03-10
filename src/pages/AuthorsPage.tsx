@@ -6,11 +6,11 @@ import {
 import { Pagination } from "../components/Pagnatation";
 import { CreateAuthorAside } from "../components/CreateAuthor";
 import { AuthorFiltersAside } from "../components/AuthorFilterAside";
-import { UpdateAuthorAside } from "../components/UpdateAuthor";
 import defaultAvatar from "../images/icons8-user-default-64.png";
 import { useNavigate } from "react-router-dom";
 import plisIcon from "../images/icons8-plus-24.png";
 import { DeleteConfirm } from "../components/DeleteConfirm";
+import { UpdateAuthorAside } from "../components/UpdateAuthor";
 
 const TAKE = 5;
 
@@ -33,7 +33,7 @@ export const AuthorPage = () => {
     () => ({
       search: search.trim() || undefined,
       page,
-      take: TAKE
+      take: TAKE,
     }),
     [search, page]
   );
@@ -67,25 +67,44 @@ export const AuthorPage = () => {
     setEditId(null);
     setIsCreateOpen(true);
   };
+
   const openDelete = (id: number) => {
-    setDeleteId(id)
-    setIsDeleteOpen(true)
-  }
+    setDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
   const closeDelete = () => {
-    setDeleteId(null)
-    setIsDeleteOpen(false)
-  }
+    setDeleteId(null);
+    setIsDeleteOpen(false);
+  };
 
   const confirmDelete = async () => {
-    if (deleteId === null) return
+    if (deleteId === null) return;
+
     try {
       await deleteAuthor(deleteId).unwrap();
-      closeDelete()
+      closeDelete();
     } catch (e) {
       console.log("Delete failed", e);
-
     }
-  }
+  };
+
+  const getAuthorImageUrl = (photo?: string) => {
+    if (!photo) return defaultAvatar;
+
+    const normalizedPhoto = photo.replace(/^https(?=\/\/)/, "https:");
+
+    if (
+      normalizedPhoto.startsWith("http://") ||
+      normalizedPhoto.startsWith("https://")
+    ) {
+      return normalizedPhoto;
+    }
+
+    return `${import.meta.env.VITE_SERVER_URL}${
+      normalizedPhoto.startsWith("/") ? "" : "/"
+    }${normalizedPhoto}`;
+  };
 
   return (
     <>
@@ -176,30 +195,41 @@ export const AuthorPage = () => {
                   >
                     <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
                       <img
-                        src={
-                          a.author_photo
-                            ? `https://bookaythorsback-production.up.railway.app${a.author_photo}`
-                            : defaultAvatar
-                        }
+                        src={getAuthorImageUrl(a.author_photo)}
                         alt="Avatar"
                         className="h-10 w-10 rounded-full object-cover"
                         onClick={() => authorPageClick(a.id)}
+                        onError={(e) => {
+                          e.currentTarget.src = defaultAvatar;
+                        }}
                       />
                     </td>
 
-                    <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white" onClick={() => authorPageClick(a.id)}>
+                    <td
+                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                      onClick={() => authorPageClick(a.id)}
+                    >
                       {a.name}
                     </td>
 
-                    <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white" onClick={() => authorPageClick(a.id)}>
+                    <td
+                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                      onClick={() => authorPageClick(a.id)}
+                    >
                       {a.full_name}
                     </td>
 
-                    <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white" onClick={() => authorPageClick(a.id)}>
+                    <td
+                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                      onClick={() => authorPageClick(a.id)}
+                    >
                       {a.country}
                     </td>
 
-                    <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white" onClick={() => authorPageClick(a.id)}>
+                    <td
+                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                      onClick={() => authorPageClick(a.id)}
+                    >
                       {a.description}
                     </td>
 
@@ -227,10 +257,6 @@ export const AuthorPage = () => {
                         >
                           Delete
                         </button>
-                        <DeleteConfirm isOpen={isDeleteOpen}
-                          isLoading={isDeleting}
-                          onClose={closeDelete}
-                          onConfirm={confirmDelete} />
                       </div>
                     </td>
                   </tr>
@@ -238,6 +264,13 @@ export const AuthorPage = () => {
           </tbody>
         </table>
       </div>
+
+      <DeleteConfirm
+        isOpen={isDeleteOpen}
+        isLoading={isDeleting}
+        onClose={closeDelete}
+        onConfirm={confirmDelete}
+      />
 
       <div className="m-4">
         <Pagination
@@ -262,7 +295,7 @@ export const AuthorPage = () => {
             </button>
           </div>
 
-          <UpdateAuthorAside id={editId} onSuccess={closeUpdate} />
+          <UpdateAuthorAside id={editId}  onSuccess={() => setIsUpdateOpen(false)}/>
         </aside>
       )}
 

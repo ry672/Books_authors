@@ -8,6 +8,8 @@ import {
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
 import * as yup from "yup";
+import { uploadToImageKit } from "../imageKit/imageKit";
+import defaultAvatar from "../images/icons8-user-default-64.png";
 
 type FormValues = {
   name: string;
@@ -88,12 +90,24 @@ export const UpdateAuthorAside = ({
   }, [file]);
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
+    if (!author) return;
+
     try {
+      let author_photo: string | undefined = author.author_photo;
+
+      if (file) {
+        const uploaded = await uploadToImageKit(file);
+        author_photo =
+          typeof uploaded?.url === "string"
+            ? uploaded.url.replace(/^https(?=\/\/ik\.imagekit\.io)/, "https:")
+            : author.author_photo;
+      }
+
       await patchAuthor({
         id,
         data: {
           ...values,
-          file: file ?? undefined,
+          author_photo,
         },
       }).unwrap();
 
@@ -102,21 +116,35 @@ export const UpdateAuthorAside = ({
       console.log("Update author failed:", e);
     }
   };
-  const currentImage = useMemo(()=>{
-    if (!author?.author_photo) return ("");
-    if (author.author_photo.startsWith("http://") || author.author_photo.startsWith("https://")) {
-      return author.author_photo
+
+  const currentImage = useMemo(() => {
+    if (!author?.author_photo) return defaultAvatar;
+
+    const normalizedPhoto = author.author_photo.replace(
+      /^https(?=\/\/)/,
+      "https:"
+    );
+
+    if (
+      normalizedPhoto.startsWith("http://") ||
+      normalizedPhoto.startsWith("https://")
+    ) {
+      return normalizedPhoto;
     }
-    const baseUrl = import.meta.env.VITE_SERVER_URL || "https://bookaythorsback-production.up.railway.app";
-    return `${baseUrl}${author.author_photo.startsWith("/") ? "" : "/"}${author.author_photo}`;
-  }, [author])
+
+    const baseUrl =
+      import.meta.env.VITE_SERVER_URL ||
+      "https://bookaythorsback-production.up.railway.app";
+
+    return `${baseUrl}${normalizedPhoto.startsWith("/") ? "" : "/"}${normalizedPhoto}`;
+  }, [author]);
 
   const backendMessage =
     saveError &&
     typeof saveError === "object" &&
     saveError !== null &&
     "data" in saveError
-      ? (saveError as any).data?.message
+      ? String((saveError as { data?: { message?: string } }).data?.message ?? "")
       : null;
 
   const handleCancelFile = () => {
@@ -127,7 +155,14 @@ export const UpdateAuthorAside = ({
       fileInputRef.current.value = "";
     }
   };
-  
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+  };
 
   if (isLoading) return <div>Loading...</div>;
   if (isError || !author) return <div>Author not found</div>;
@@ -213,40 +248,60 @@ export const UpdateAuthorAside = ({
       />
 
       {backendMessage && (
-        <p className="text-xs text-red-600">{String(backendMessage)}</p>
+        <p className="text-xs text-red-600">{backendMessage}</p>
       )}
 
       <div className="pt-2">
-        <label className="text-sm">Avatar</label>
-        
+        <label className="mb-2 block text-sm">Avatar</label>
 
         <input
           ref={fileInputRef}
-          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-white file:py-2 file:px-4 file:text-sm file:font-semibold file:text-black hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
           type="file"
-          accept="image/png,image/jpeg"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          accept="image/png,image/jpeg,image/jpg"
+          onChange={handleFileChange}
+          className="hidden"
         />
 
-        {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+          >
+            Choose file
+          </button>
+
+          <span className="text-xs text-white">
+            {file ? `Selected: ${file.name}` : ""}
+          </span>
+        </div>
 
         {(preview || currentImage) && (
           <img
             src={preview || currentImage}
             alt="Preview"
             className="mt-2 h-24 w-24 rounded-md object-cover"
+            onError={(e) => {
+              e.currentTarget.src = defaultAvatar;
+            }}
           />
         )}
-      </div>
 
-      <button type="button" onClick={handleCancelFile}>
-        Cancel
-      </button>
+        {file && (
+          <button
+            type="button"
+            onClick={handleCancelFile}
+            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
 
       <ButtonApp
         buttonText={isSaving ? "Saving..." : "Update"}
         buttonType="submit"
-        className="rounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full mx-2 mt-5"
+        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black"
       />
     </form>
   );

@@ -7,6 +7,7 @@ import { setAuthor } from "../store/Slice/authorSlice";
 import { InputApp } from "../components/UX/InputApp";
 import { ButtonApp } from "../components/UX/ButtonApp";
 import { useNavigate } from "react-router-dom";
+import { uploadToImageKit } from "../imageKit/imageKit";
 import * as yup from "yup";
 
 interface SubmitForm {
@@ -23,69 +24,115 @@ const schema = yup.object({
   country: yup.string().trim().min(2, "minimum 2 string").required("Fill"),
 });
 
-export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => {
-  const [postAuthor, { data, isLoading, isSuccess, error }] = usePostAuthorMutation();
+export const CreateAuthorAside = ({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+}) => {
+  const [postAuthor, { data, isLoading, isSuccess, error }] =
+    usePostAuthorMutation();
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>("")
+  const [preview, setPreview] = useState<string>("");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const urlRef = useRef<HTMLInputElement|null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const {
     handleSubmit,
     control,
     reset,
     formState: { errors },
   } = useForm<SubmitForm>({
-    defaultValues: { name: "", full_name: "", country: "", description: "" },
+    defaultValues: {
+      name: "",
+      full_name: "",
+      description: "",
+      country: "",
+    },
     resolver: yupResolver(schema),
     mode: "onBlur",
   });
 
   useEffect(() => {
-    if (isSuccess && data) {
-      dispatch(setAuthor(data));
-      reset();
-      setFile(null);
-      onSuccess?.();
-      navigate("/author-page");
+    if (!isSuccess || !data) return;
+
+    dispatch(setAuthor(data));
+    reset();
+    setFile(null);
+    setPreview("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
+
+    onSuccess?.();
+    navigate("/author-page");
   }, [isSuccess, data, dispatch, reset, onSuccess, navigate]);
 
-  useEffect(()=>{
-    if(!file){
-      setPreview("")
-      return
-    } else {
-      const objectUrl = URL.createObjectURL(file);
-      setPreview(objectUrl)
-
-      return (()=>{
-        URL.revokeObjectURL(objectUrl)
-      })
+  useEffect(() => {
+    if (!file) {
+      setPreview("");
+      return;
     }
-  }, [file])
 
-  
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
 
   const onSubmit: SubmitHandler<SubmitForm> = async (formData) => {
     try {
-      await postAuthor({ ...formData, file }).unwrap();
+      let author_photo: string | undefined;
+
+      if (file) {
+        const uploaded = await uploadToImageKit(file);
+
+        author_photo =
+          typeof uploaded?.url === "string"
+            ? uploaded.url.replace(/^https(?=\/\/ik\.imagekit\.io)/, "https:")
+            : undefined;
+      }
+
+      await postAuthor({
+        ...formData,
+        author_photo,
+      }).unwrap();
     } catch (e) {
       console.log("Create author failed:", e);
     }
   };
-  
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+  };
+
+  const handleCancelFile = () => {
+    setFile(null);
+    setPreview("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const backendMessage =
     error && typeof error === "object" && error !== null && "data" in error
-      ? (error as any).data?.message
+      ? String((error as { data?: { message?: string } }).data?.message ?? "")
       : null;
 
-
-
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 bg-[#10141C]">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-3 bg-[#10141C]"
+    >
       <Controller
         name="name"
         control={control}
@@ -93,13 +140,14 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="name"
               placeholder="Rufina"
               textArea="Name"
             />
-
-            {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            )}
           </>
         )}
       />
@@ -111,7 +159,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="full_name"
               placeholder="Garaeva"
               textArea="Full_Name"
@@ -130,12 +178,14 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="country"
               placeholder="Tashkent"
               textArea="Country"
             />
-            {errors.country && <p className="text-xs text-red-600">{errors.country.message}</p>}
+            {errors.country && (
+              <p className="text-xs text-red-600">{errors.country.message}</p>
+            )}
           </>
         )}
       />
@@ -147,55 +197,77 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="description"
               placeholder="About author..."
               textArea="Description"
             />
             {errors.description && (
-              <p className="text-xs text-red-600">{errors.description.message}</p>
+              <p className="text-xs text-red-600">
+                {errors.description.message}
+              </p>
             )}
           </>
         )}
       />
 
       <div className="pt-2">
-        <label className="text-sm">Avatar</label>
+        <label className="mb-2 block text-sm">Avatar</label>
+
         <input
-          ref={urlRef}
-          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-white file:py-2 file:px-4 file:text-sm file:font-semibold file:text-black hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
+          ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          accept="image/png,image/jpeg,image/jpg"
+          onChange={handleFileChange}
+          className="hidden"
         />
-        {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
-        {preview && <img src={preview}/>}
 
-        
-        
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+          >
+            Choose file
+          </button>
+
+          <span className="text-xs text-white">
+            {file ? `Selected: ${file.name}` : ""}
+          </span>
+        </div>
+
+        {preview && (
+          <img
+            src={preview}
+            alt="Preview"
+            className="mt-2 h-24 w-24 rounded-md border border-[#2D3748] object-cover"
+          />
+        )}
+
+        {file && (
+          <button
+            type="button"
+            onClick={handleCancelFile}
+            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+          >
+            Cancel
+          </button>
+        )}
       </div>
-      <button 
-      type="button"
-      onChange={() => setFile(null)}
-      onClick={()=>{
-        
-        setFile(null)
-        setPreview("")
-        if (urlRef.current) {
-          urlRef.current.value=""
-          
-        }
-        
-      }}>Cancel</button>
-      
-      
 
-      <ButtonApp buttonText={isLoading ? "Creating..." : "Create"} buttonType="submit" className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-55"/>
+      <ButtonApp
+        buttonText={isLoading ? "Creating..." : "Create"}
+        buttonType="submit"
+        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black"
+      />
+
       {backendMessage && (
-        <p className="text-sm text-red-600">{String(backendMessage)}</p>
+        <p className="text-sm text-red-600">{backendMessage}</p>
       )}
 
-      {error && <p className="text-sm text-red-600">Failed to create author</p>}
+      {error && !backendMessage && (
+        <p className="text-sm text-red-600">Failed to create author</p>
+      )}
     </form>
   );
 };

@@ -6,7 +6,6 @@ export interface AuthorResponse {
   name: string;
   full_name: string;
   description: string;
-  file: null;
   country: string;
   is_deleted: boolean;
   author_photo?: string;
@@ -20,7 +19,7 @@ export type AuthorCreateArgs = {
   full_name: string;
   description?: string;
   country?: string;
-  file?: File | null;
+  author_photo?: string;
 };
 
 export interface AuthorPayload {
@@ -54,30 +53,11 @@ export const authorApi = createApi({
 
   endpoints: (builder) => ({
     postAuthor: builder.mutation<AuthorResponse, AuthorCreateArgs>({
-      query: (payload) => {
-        const formData = new FormData();
-
-        formData.append("name", payload.name);
-        formData.append("full_name", payload.full_name);
-
-        if (payload.description) {
-          formData.append("description", payload.description);
-        }
-
-        if (payload.country) {
-          formData.append("country", payload.country);
-        }
-
-        if (payload.file) {
-          formData.append("file", payload.file);
-        }
-
-        return {
-          url: "/author",
-          method: "POST",
-          body: formData,
-        };
-      },
+      query: (payload) => ({
+        url: "/author",
+        method: "POST",
+        body: payload,
+      }),
       invalidatesTags: ["Authors"],
     }),
 
@@ -89,7 +69,7 @@ export const authorApi = createApi({
           ...(args?.search ? { search: args.search } : {}),
           ...(args?.name ? { name: args.name } : {}),
           ...(args?.full_name ? { full_name: args.full_name } : {}),
-          ...(args?.country ? {country: args.country}: {}),
+          ...(args?.country ? { country: args.country } : {}),
           ...(args?.page ? { page: args.page } : {}),
           ...(args?.take ? { take: args.take } : {}),
         },
@@ -109,44 +89,23 @@ export const authorApi = createApi({
         url: `/author/${id}`,
         method: "GET",
       }),
-      providesTags: (_res, _err, id) => [{ type: "Author", id },{ type: "Books", id: "LIST" }],
+      providesTags: (_res, _err, id) => [
+        { type: "Author", id },
+        { type: "Books", id: "LIST" },
+      ],
       keepUnusedDataFor: 300,
     }),
 
     patchAuthor: builder.mutation<AuthorResponse, PatchAuthorsArgs>({
-      query: ({ id, data }) => {
-        const formData = new FormData();
-
-        if (data.name !== undefined) {
-          formData.append("name", data.name);
-        }
-
-        if (data.full_name !== undefined) {
-          formData.append("full_name", data.full_name);
-        }
-
-        if (data.description !== undefined) {
-          formData.append("description", data.description);
-        }
-
-        if (data.country !== undefined) {
-          formData.append("country", data.country);
-        }
-
-        if (data.file) {
-          formData.append("file", data.file);
-        }
-
-        return {
-          url: `/author/${id}`,
-          method: "PATCH",
-          body: formData,
-        };
-      },
+      query: ({ id, data }) => ({
+        url: `/author/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
       invalidatesTags: (_res, _err, { id }) => [
         "Authors",
         { type: "Author", id },
-        { type: "Books", id: "LIST" }
+        { type: "Books", id: "LIST" },
       ],
     }),
 
