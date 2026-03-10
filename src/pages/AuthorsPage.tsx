@@ -12,8 +12,6 @@ import plisIcon from "../images/icons8-plus-24.png";
 import { DeleteConfirm } from "../components/DeleteConfirm";
 import { UpdateAuthorAside } from "../components/UpdateAuthor";
 
-const TAKE = 5;
-
 export const AuthorPage = () => {
   const [page, setPage] = useState(1);
 
@@ -26,6 +24,7 @@ export const AuthorPage = () => {
   const [deleteAuthor, { isLoading: isDeleting }] = useDeleteAuthorMutation();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [take, setTake] = useState(5);
 
   const [search, setSearch] = useState("");
 
@@ -33,9 +32,9 @@ export const AuthorPage = () => {
     () => ({
       search: search.trim() || undefined,
       page,
-      take: TAKE,
+      take: take,
     }),
-    [search, page]
+    [search, page, take]
   );
 
   const { data, isLoading, isError } = useGetAuthorQuery(queryArgs);
@@ -101,9 +100,8 @@ export const AuthorPage = () => {
       return normalizedPhoto;
     }
 
-    return `${import.meta.env.VITE_SERVER_URL}${
-      normalizedPhoto.startsWith("/") ? "" : "/"
-    }${normalizedPhoto}`;
+    return `${import.meta.env.VITE_SERVER_URL}${normalizedPhoto.startsWith("/") ? "" : "/"
+      }${normalizedPhoto}`;
   };
 
   return (
@@ -275,10 +273,16 @@ export const AuthorPage = () => {
       <div className="m-4">
         <Pagination
           page={page}
+          take={take}
           totalPages={totalPages}
           onPrev={() => setPage((p) => Math.max(p - 1, 1))}
           onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
           onPage={(p) => setPage(p)}
+          onTake={(value) => {
+            setTake(value);
+            setPage(1);
+          }}
+
         />
       </div>
 
@@ -295,7 +299,7 @@ export const AuthorPage = () => {
             </button>
           </div>
 
-          <UpdateAuthorAside id={editId}  onSuccess={() => setIsUpdateOpen(false)}/>
+          <UpdateAuthorAside id={editId} onSuccess={() => setIsUpdateOpen(false)} />
         </aside>
       )}
 

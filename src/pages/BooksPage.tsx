@@ -8,10 +8,10 @@ import { BookFiltersAside } from "../components/BookFilterAside";
 import plisIcon from "../images/icons8-plus-24.png";
 import { DeleteConfirm } from "../components/DeleteConfirm";
 
-const TAKE = 5;
-
 export const BooksPage = () => {
   const [page, setPage] = useState(1);
+  const [take, setTake] = useState(5);
+
   const navigate = useNavigate();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -34,13 +34,18 @@ export const BooksPage = () => {
     return Number.isFinite(n) ? n : undefined;
   }, [price]);
 
-  const { data: books, isLoading, isError } = useGetBookQuery({
-    search: search.trim() || undefined,
-    page,
-    take: TAKE,
-    name: name.trim() || undefined,
-    price: exactPrice,
-  });
+  const queryArgs = useMemo(
+    () => ({
+      search: search.trim() || undefined,
+      page,
+      take,
+      name: name.trim() || undefined,
+      price: exactPrice,
+    }),
+    [search, page, take, name, exactPrice]
+  );
+
+  const { data: books, isLoading, isError } = useGetBookQuery(queryArgs);
 
   const totalPages = Math.max(books?.pages ?? 1, 1);
 
@@ -100,7 +105,7 @@ export const BooksPage = () => {
 
   return (
     <>
-      <div className="flex items-end justify-between gap-3 m-4">
+      <div className="m-4 flex items-end justify-between gap-3">
         <BookFiltersAside
           onClear={clearFilters}
           search={search}
@@ -226,11 +231,16 @@ export const BooksPage = () => {
           onPrev={() => setPage((p) => Math.max(p - 1, 1))}
           onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
           onPage={(p) => setPage(p)}
+          take={take}
+          onTake={(value) => {
+            setTake(value);
+            setPage(1);
+          }}
         />
       </div>
 
       {isUpdateOpen && editId !== null && (
-        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
+        <aside className="fixed right-0 top-0 z-50 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Update Book</h2>
             <button
@@ -247,7 +257,7 @@ export const BooksPage = () => {
       )}
 
       {isCreateOpen && (
-        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
+        <aside className="fixed right-0 top-0 z-50 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Create Book</h2>
             <button

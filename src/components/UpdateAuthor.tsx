@@ -38,6 +38,7 @@ export const UpdateAuthorAside = ({
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
+  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -69,6 +70,7 @@ export const UpdateAuthorAside = ({
 
     setFile(null);
     setPreview("");
+    setRemoveCurrentImage(false);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -95,6 +97,10 @@ export const UpdateAuthorAside = ({
     try {
       let author_photo: string | undefined = author.author_photo;
 
+      if (removeCurrentImage) {
+        author_photo = "";
+      }
+
       if (file) {
         const uploaded = await uploadToImageKit(file);
         author_photo =
@@ -118,6 +124,7 @@ export const UpdateAuthorAside = ({
   };
 
   const currentImage = useMemo(() => {
+    if (removeCurrentImage) return "";
     if (!author?.author_photo) return defaultAvatar;
 
     const normalizedPhoto = author.author_photo.replace(
@@ -137,7 +144,7 @@ export const UpdateAuthorAside = ({
       "https://bookaythorsback-production.up.railway.app";
 
     return `${baseUrl}${normalizedPhoto.startsWith("/") ? "" : "/"}${normalizedPhoto}`;
-  }, [author]);
+  }, [author, removeCurrentImage]);
 
   const backendMessage =
     saveError &&
@@ -161,7 +168,18 @@ export const UpdateAuthorAside = ({
 
     if (!selectedFile) return;
 
+    setRemoveCurrentImage(false);
     setFile(selectedFile);
+  };
+
+  const handleDeleteImage = () => {
+    setFile(null);
+    setPreview("");
+    setRemoveCurrentImage(true);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -287,15 +305,27 @@ export const UpdateAuthorAside = ({
           />
         )}
 
-        {file && (
-          <button
-            type="button"
-            onClick={handleCancelFile}
-            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
-          >
-            Cancel
-          </button>
-        )}
+        <div className="mt-2 flex gap-2">
+          {!!author.author_photo && !removeCurrentImage && (
+            <button
+              type="button"
+              onClick={handleDeleteImage}
+              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+            >
+              Delete Image
+            </button>
+          )}
+
+          {file && (
+            <button
+              type="button"
+              onClick={handleCancelFile}
+              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
 
       <ButtonApp
