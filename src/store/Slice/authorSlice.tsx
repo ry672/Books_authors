@@ -1,5 +1,4 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { BookResponse } from "../Api/BookApi";
 
 export interface AuthorResponse {
   id: number;
