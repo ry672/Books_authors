@@ -28,20 +28,14 @@ export const AuthorPage = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [search, setSearch] = useState("");
-  const [name, setName] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [country, setCountry] = useState("")
 
   const queryArgs = useMemo(
     () => ({
       search: search.trim() || undefined,
       page,
-      take: TAKE,
-      name: name.trim() || undefined,
-      full_name: fullName.trim() || undefined,
-      country: country.trim() || undefined,
+      take: TAKE
     }),
-    [search, page, name, fullName, country]
+    [search, page]
   );
 
   const { data, isLoading, isError } = useGetAuthorQuery(queryArgs);
@@ -99,13 +93,7 @@ export const AuthorPage = () => {
         <AuthorFiltersAside
           search={search}
           setSearch={setSearch}
-          name={name}
-          setName={setName}
-          fullName={fullName}
-          setFullName={setFullName}
           setPage={setPage}
-          country={country}
-          setCountry={setCountry}
         />
 
         <button

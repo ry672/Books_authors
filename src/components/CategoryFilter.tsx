@@ -6,8 +6,7 @@ type Props = {
   search: string;
   setSearch: (v: string) => void;
 
-  name: string;
-  setName: (v: string) => void;
+
 
   setPage: (v: number) => void;
 };
@@ -16,8 +15,6 @@ export const CategoryFiltersAside: React.FC<Props> = ({
  
   search,
   setSearch,
-  name,
-  setName,
   setPage,
 }) => {
  
@@ -41,19 +38,7 @@ export const CategoryFiltersAside: React.FC<Props> = ({
         />
       </div>
 
-      {/* Name
-      <div className="space-y-2 mb-4">
-      
-        <input
-          className="w-full rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-sm mt-4"
-          value={name}
-          placeholder="Filter by name..."
-          onChange={(e) => {
-            setName(e.target.value);
-            setPage(1);
-          }}
-        />
-      </div> */}
+     
       </div>
    
   );

@@ -25,18 +25,16 @@ export const CategoryPage = () => {
 
   // filters
   const [search, setSearch] = useState("");
-  const [name, setName] = useState("");
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const queryArgs = useMemo(
     () => ({
       search: search.trim() || undefined,
-      name: name.trim() || undefined,
       page,
       take: TAKE,
     }),
-    [search, name, page]
+    [search, page]
   );
 
   const { data, isLoading, isError } = useGetCategoryQuery(queryArgs);
@@ -102,8 +100,6 @@ export const CategoryPage = () => {
         <CategoryFiltersAside
           search={search}
           setSearch={setSearch}
-          name={name}
-          setName={setName}
           setPage={setPage}
         />
 

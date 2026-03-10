@@ -105,10 +105,6 @@ export const BooksPage = () => {
           onClear={clearFilters}
           search={search}
           setSearch={setSearch}
-          name={name}
-          setName={setName}
-          price={price}
-          setPrice={setPrice}
           setPage={setPage}
         />
 
