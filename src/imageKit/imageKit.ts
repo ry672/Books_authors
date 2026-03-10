@@ -1,9 +1,4 @@
-import ImageKit from "imagekit-javascript";
-
-const imagekit = new ImageKit({
-  publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
-  urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-});
+import { upload } from "@imagekit/javascript";
 
 type ImageKitAuth = {
   token: string;
@@ -22,9 +17,10 @@ export async function uploadToImageKit(file: File) {
 
   const auth: ImageKitAuth = await authResponse.json();
 
-  return imagekit.upload({
+  return upload({
     file,
     fileName: file.name,
+    publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
     token: auth.token,
     signature: auth.signature,
     expire: auth.expire,
