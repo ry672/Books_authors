@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
@@ -102,6 +102,14 @@ export const UpdateAuthorAside = ({
       console.log("Update author failed:", e);
     }
   };
+  const currentImage = useMemo(()=>{
+    if (!author?.author_photo) return ("");
+    if (author.author_photo.startsWith("http://") || author.author_photo.startsWith("https://")) {
+      return author.author_photo
+    }
+    const baseUrl = import.meta.env.VITE_SERVER_URL || "https://bookaythorsback-production.up.railway.app";
+    return `${baseUrl}${author.author_photo.startsWith("/") ? "" : "/"}${author.author_photo}`;
+  }, [author])
 
   const backendMessage =
     saveError &&
@@ -119,6 +127,7 @@ export const UpdateAuthorAside = ({
       fileInputRef.current.value = "";
     }
   };
+  
 
   if (isLoading) return <div>Loading...</div>;
   if (isError || !author) return <div>Author not found</div>;
@@ -209,6 +218,7 @@ export const UpdateAuthorAside = ({
 
       <div className="pt-2">
         <label className="text-sm">Avatar</label>
+        
 
         <input
           ref={fileInputRef}
@@ -220,9 +230,9 @@ export const UpdateAuthorAside = ({
 
         {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
 
-        {preview && (
+        {(preview || currentImage) && (
           <img
-            src={preview}
+            src={preview || currentImage}
             alt="Preview"
             className="mt-2 h-24 w-24 rounded-md object-cover"
           />

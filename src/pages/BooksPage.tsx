@@ -230,7 +230,7 @@ export const BooksPage = () => {
       </div>
 
       {isUpdateOpen && editId !== null && (
-        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#0B0E14] p-6 shadow-sm">
+        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Update Book</h2>
             <button
