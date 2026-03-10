@@ -1,26 +1,24 @@
 import React from "react";
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  onClear: () => void;
-
   search: string;
-  setSearch: (v: string) => void;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
+
+  country: string;
+  setCountry: React.Dispatch<React.SetStateAction<string>>;
 
   name: string;
-  setName: (v: string) => void;
+  setName: React.Dispatch<React.SetStateAction<string>>;
 
   fullName: string;
-  setFullName: (v: string) => void;
+  setFullName: React.Dispatch<React.SetStateAction<string>>;
 
-  setPage: (v: number) => void;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export const AuthorFiltersAside: React.FC<Props> = ({
-  isOpen,
-  onClose,
-  onClear,
+  country,
+  setCountry,
   search,
   setSearch,
   name,
@@ -29,37 +27,11 @@ export const AuthorFiltersAside: React.FC<Props> = ({
   setFullName,
   setPage,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Filters</h2>
-
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClear}
-            className="px-3 py-1 rounded-md border hover:bg-gray-50"
-          >
-            Clear
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-1 rounded-md border hover:bg-gray-50"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Search</label>
+    <div className="flex flex-wrap items-end gap-4">
+      <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-[220px] rounded-md border border-[#2D3748] bg-gray-900 px-2 py-2 placeholder:text-sm text-white"
           value={search}
           placeholder="Search..."
           onChange={(e) => {
@@ -69,11 +41,9 @@ export const AuthorFiltersAside: React.FC<Props> = ({
         />
       </div>
 
-      {/* Name */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Name</label>
+      {/* <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-[220px] rounded-md border border-[#2D3748] bg-gray-900 px-2 py-2 placeholder:text-sm text-white"
           value={name}
           placeholder="Filter by name..."
           onChange={(e) => {
@@ -81,13 +51,24 @@ export const AuthorFiltersAside: React.FC<Props> = ({
             setPage(1);
           }}
         />
-      </div>
+      </div> */}
 
-      {/* Full name */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Full name</label>
+      {/* <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-[220px] rounded-md border border-[#2D3748] bg-gray-900 px-2 py-2 placeholder:text-sm text-white"
+          value={country}
+          placeholder="Filter by country..."
+          onChange={(e) => {
+            setCountry(e.target.value);
+            setPage(1);
+          }}
+        />
+
+      </div> */}
+
+      {/* <div className="space-y-2">
+        <input
+          className="w-[220px] rounded-md border border-[#2D3748] bg-gray-900 px-2 py-2 placeholder:text-sm text-white"
           value={fullName}
           placeholder="Filter by full name..."
           onChange={(e) => {
@@ -95,7 +76,7 @@ export const AuthorFiltersAside: React.FC<Props> = ({
             setPage(1);
           }}
         />
-      </div>
-    </aside>
+      </div> */}
+    </div>
   );
 };

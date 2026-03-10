@@ -18,7 +18,7 @@ export const InputApp = ({
 }: InputProps) => {
   return (
     <div className="space-y-6 text-left">
-      <label htmlFor={classId} className="mb-2 block text-sm font-medium text-gray-700">{textArea}</label>
+      <label htmlFor={classId} className="mb-2 block text-sm font-medium text-white-700">{textArea}</label>
       <input
         type={type}
         {...props} 

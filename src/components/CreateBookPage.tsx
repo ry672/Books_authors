@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import type { SerializedError } from "@reduxjs/toolkit";
+import { LabelAuthors } from "./LabelAuthors";
 
 interface SubmitForm {
   name: string;
@@ -120,7 +121,7 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
   const backendErrorText = getErrorMessage(error);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 bg-[#10141C]">
       <Controller
         name="name"
         control={control}
@@ -128,7 +129,7 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="name"
               placeholder="Clean Code"
               textArea="Name"
@@ -145,7 +146,7 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900  rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="link"
               placeholder="https://example.com"
               textArea="Link"
@@ -162,7 +163,7 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="price"
               placeholder="100"
               textArea="Price"
@@ -180,7 +181,7 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="description"
               placeholder="Good book about code..."
               textArea="Description"
@@ -191,17 +192,22 @@ export const CreateBookAside = ({ onSuccess }: { onSuccess?: () => void }) => {
           </>
         )}
       />
+      <LabelAuthors control={control} name="authorId"/>
+      {errors.authorId && (
+        <p className="text-xs text-red-600">{String(errors.authorId.message)}</p>
+      )}
+
 
       <LabelCategories control={control} name="categoryId" />
       {errors.categoryId && (
         <p className="text-xs text-red-600">{String(errors.categoryId.message)}</p>
       )}
 
-      <ButtonApp buttonText={isLoading ? "Creating..." : "Create"} buttonType="submit" />
+      <ButtonApp buttonText={isLoading ? "Creating..." : "Create"} buttonType="submit" className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-60"/>
 
      
       {backendErrorText && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md border bg-white px-3 py-2 text-[12px] text-black">
           {backendErrorText}
         </div>
       )}

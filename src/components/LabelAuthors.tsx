@@ -5,33 +5,31 @@ import {
   type FieldValues,
   type Path,
 } from "react-hook-form";
-import {
-  useGetCategoryQuery,
-  type CategoryResponse,
-} from "../store/Api/CategoryApi";
+
+import { useGetAuthorQuery, type AuthorResponse } from "../store/Api/AuthorApi";
 
 type Props<T extends FieldValues> = {
   control: Control<T>;
   name?: Path<T>;
 };
 
-export function LabelCategories<T extends FieldValues>({
+export function LabelAuthors<T extends FieldValues>({
   control,
   name,
 }: Props<T>) {
-  const { data, isLoading } = useGetCategoryQuery({});
+  const { data, isLoading } = useGetAuthorQuery({});
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const categories: CategoryResponse[] = data?.rows ?? [];
+  const authors: AuthorResponse[] = data?.rows ?? [];
 
-  const filteredCategories = useMemo(() => {
-    return categories
-      .filter((c) =>
-        c.name.toLowerCase().includes(search.trim().toLowerCase())
+  const filteredAutthors = useMemo(() => {
+    return authors
+      .filter((a) =>
+        a.name.toLowerCase().includes(search.trim().toLowerCase())
       )
       .slice(0, 5);
-  }, [categories, search]);
+  }, [authors, search]);
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -39,21 +37,21 @@ export function LabelCategories<T extends FieldValues>({
     <Controller
       name={(name ?? "categoryId") as Path<T>}
       control={control}
-      rules={{ required: "Select category" }}
+      rules={{ required: "Select author" }}
       render={({ field, fieldState }) => {
-        const selectedCategory = categories.find(
+        const selectedAuthor = authors.find(
           (c) => c.id === Number(field.value)
         );
 
         return (
           <div className="relative w-full">
-            <span className="text-white text-[14px]">Select category</span>
+            <span className="text-white text-[14px]">Select author</span>
             <div
               onClick={() => setIsOpen((prev) => !prev)}
               className="mt-2 flex cursor-pointer items-center justify-between bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
             >
               <span className="text-[14px]">
-                {selectedCategory ? selectedCategory.name : "Select category"}
+                {selectedAuthor ? selectedAuthor.name : "Select category"}
               </span>
               <span>{isOpen ? "▲" : "▼"}</span>
             </div>
@@ -65,29 +63,29 @@ export function LabelCategories<T extends FieldValues>({
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search category..."
+                    placeholder="Search author..."
                     className="w-full  border-b border-[#2D3748] bg-gray-900 text-white outline-none px-3 py-2"
                   />
                 </div>
 
                 <div className="max-h-[220px] overflow-y-auto">
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((c) => (
+                  {filteredAutthors.length > 0 ? (
+                    filteredAutthors.map((a) => (
                       <div
-                        key={c.id}
+                        key={a.id}
                         onClick={() => {
-                          field.onChange(c.id);
+                          field.onChange(a.id);
                           setIsOpen(false);
                           setSearch("");
                         }}
                         className="cursor-pointer px-3 py-2 text-white hover:bg-[#2D3748]"
                       >
-                        {c.name}
+                        {a.name}
                       </div>
                     ))
                   ) : (
                     <div className="px-3 py-2 text-gray-400">
-                      No categories found
+                      No authors found
                     </div>
                   )}
                 </div>

@@ -6,6 +6,7 @@ import { useGetBookByIdQuery, usePatchBookMutation } from "../store/Api/BookApi"
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
 import { LabelCategories } from "./LabelCategories";
+import { LabelAuthors } from "./LabelAuthors";
 
 type FormValues = {
   name: string;
@@ -13,7 +14,8 @@ type FormValues = {
   price: number;
   description: string;
   categoryId: number | null;
-};
+  authorId: number | null;
+}
 
 const httpRegex =
   /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
@@ -38,6 +40,13 @@ const schema: yup.ObjectSchema<FormValues> = yup.object({
     .nullable()
     .defined() 
     .typeError("Choose category"),
+
+  authorId: yup
+     .number()
+    .nullable()
+    .defined() 
+    .typeError("Choose author"),
+
 });
 
 export const UpdateBookAside = ({
@@ -78,6 +87,7 @@ export const UpdateBookAside = ({
       price: book.price ?? 1,
       description: book.description ?? "",
       categoryId: book.categoryId ?? null,
+      authorId: book.authorId ?? null,
     });
   }, [book, reset]);
 
@@ -91,7 +101,7 @@ export const UpdateBookAside = ({
           price: Number(values.price),
           description: values.description,
           categoryId: values.categoryId ?? undefined,
-          authorId: book?.authorId,
+          authorId: values.authorId ?? undefined,
         },
       }).unwrap();
 
@@ -166,8 +176,13 @@ export const UpdateBookAside = ({
           </>
         )}
       />
+      <LabelAuthors control={control} name="authorId"/>
+      {errors.authorId && (
+        <p className="text-xs text-red-600">{String(errors.authorId.message)}</p>
+      )}
 
-      <LabelCategories<FormValues> control={control} name="categoryId" />
+
+      <LabelCategories control={control} name="categoryId" />
       {errors.categoryId && (
         <p className="text-xs text-red-600">{String(errors.categoryId.message)}</p>
       )}
@@ -176,7 +191,7 @@ export const UpdateBookAside = ({
         <p className="text-xs text-red-600">{String(backendMessage)}</p>
       )}
 
-      <ButtonApp buttonText={isSaving ? "Saving..." : "Update"} buttonType="submit" />
+      <ButtonApp buttonText={isSaving ? "Saving..." : "Update"} buttonType="submit" className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-60"/>
     </form>
   );
 };

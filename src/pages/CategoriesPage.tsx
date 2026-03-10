@@ -7,7 +7,8 @@ import {
   useDeleteCategoryMutation,
   useGetCategoryQuery,
 } from "../store/Api/CategoryApi";
-
+import plisIcon from "../images/icons8-plus-24.png"
+import { DeleteConfirm } from "../components/DeleteConfirm";
 const TAKE = 5;
 
 export const CategoryPage = () => {
@@ -16,7 +17,7 @@ export const CategoryPage = () => {
   // asides
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
 
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteCategory, { isLoading: isDeleting }] =
@@ -25,6 +26,8 @@ export const CategoryPage = () => {
   // filters
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const queryArgs = useMemo(
     () => ({
@@ -49,21 +52,17 @@ export const CategoryPage = () => {
     if (page < 1) setPage(1);
   }, [page, totalPages]);
 
-  const clearFilters = () => {
-    setSearch("");
-    setName("");
-    setPage(1);
-  };
+
 
   const openCreate = () => {
-    setIsFiltersOpen(false);
+
     setIsUpdateOpen(false);
     setEditId(null);
     setIsCreateOpen(true);
   };
 
   const openUpdate = (id: number) => {
-    setIsFiltersOpen(false);
+
     setIsCreateOpen(false);
     setEditId(id);
     setIsUpdateOpen(true);
@@ -74,135 +73,159 @@ export const CategoryPage = () => {
     setEditId(null);
   };
 
-  const openFilters = () => {
-    setIsCreateOpen(false);
-    setIsUpdateOpen(false);
-    setEditId(null);
-    setIsFiltersOpen(true);
-  };
+  const openDelete = (id: number) => {
+    setDeleteId(id)
+    setIsDeleteOpen(true)
+  }
+  const closeDelete = () => {
+    setDeleteId(null)
+    setIsDeleteOpen(false)
+  }
+
+  const confirmDelete = async ()=>{
+    if (deleteId === null)return
+    try {
+      await deleteCategory(deleteId).unwrap();
+      closeDelete()
+    } catch (e) {
+      console.log("Delete failed", e);
+      
+    }
+  }
+
+
 
   return (
-    <div className="flex gap-6">
+    <>
       {/* MAIN */}
-      <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-gray-300 px-5 py-5 bg-white">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={openFilters}
-            className="px-4 py-2 rounded-full border shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Filters
-          </button>
-
-          <button
-            type="button"
-            onClick={openCreate}
-            className="px-4 py-2 rounded-full text-green-700/70 bg-green-300/30 hover:bg-green-500/70 hover:text-white text-sm font-semibold"
-          >
-            Create Category
-          </button>
-        </div>
-
-        <div className="mt-4">
-          {isLoading && <div>Loading...</div>}
-          {isError && <div>Error</div>}
-
-          {!isLoading && !isError && items.length === 0 && <div>No results</div>}
-        </div>
-
-        <div className="divide-y divide-gray-200 mt-3">
-          {items
-            ?.filter((c: any) => c.is_deleted === false)
-            .map((c: any) => (
-              <div key={c.id} className="p-5 flex items-center justify-between">
-                <div className="whitespace-nowrap text-sm leading-6 font-medium">
-                  {c.name}
-                </div>
-
-                <div className="gap-3 flex items-center">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openUpdate(c.id);
-                    }}
-                    className="px-3 py-1 rounded-md border hover:bg-gray-50 text-sm"
-                  >
-                    Update
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isDeleting}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await deleteCategory(c.id).unwrap();
-                    }}
-                    className="px-3 py-1 rounded-md border hover:bg-red-50 text-sm disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-        </div>
-
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(p - 1, 1))}
-          onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
-          onPage={(p) => setPage(p)}
+      <div className="flex items-end gap-3 justify-between m-4">
+        <CategoryFiltersAside
+          search={search}
+          setSearch={setSearch}
+          name={name}
+          setName={setName}
+          setPage={setPage}
         />
+
+        <button
+          type="button"
+          onClick={openCreate}
+          className="rounded-md border bg-white px-2 py-2 text-[13px] text-black font-semibold flex gap-2"
+        >
+          Create
+          <img src={plisIcon} alt="" className="w-3 h-3 mt-1" />
+        </button>
       </div>
 
-      {/* FILTERS ASIDE */}
-      <CategoryFiltersAside
-        isOpen={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
-        onClear={clearFilters}
-        search={search}
-        setSearch={setSearch}
-        name={name}
-        setName={setName}
-        setPage={setPage}
-      />
 
-      {/* UPDATE ASIDE */}
-      {isUpdateOpen && editId !== null && (
-        <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Update Category</h2>
-            <button
-              onClick={closeUpdate}
-              type="button"
-              className="px-3 py-1 rounded-md border hover:bg-gray-50"
-            >
-              Close
-            </button>
+
+
+      <div className="overflow-hidden rounded-md border border-[#2D3748]">
+        <table className="items-center w-full bg-transparent border-collapse">
+          <div>
+            {isLoading && <div>Loading...</div>}
+            {isError && <div>Error</div>}
+
+            {!isLoading && !isError && items.length === 0 && <div>No results</div>}
           </div>
 
-          <UpdateCategoryAside id={editId} onSuccess={closeUpdate} />
-        </aside>
-      )}
+          <thead>
+            <tr>
+              <th className="bg-gray-900 text-white text-left py-2 px-4 text-[12px] border-b border-[#2D3748] w-20">Name</th>
+              <th className="bg-gray-900 text-white text-left py-2 px-4 text-[12px] border-b border-[#2D3748] w-20"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {items
+              ?.filter((c: any) => c.is_deleted === false)
+              .map((c: any) => (
+                <tr key={c.id} className="text-gray-500">
+                  <th className="text-white text-left py-1 px-4 text-[12px] border-b border-[#2D3748]">
+                    {c.name}
+                  </th>
 
-      {/* CREATE ASIDE */}
-      {isCreateOpen && (
-        <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Create Category</h2>
-            <button
-              onClick={() => setIsCreateOpen(false)}
-              type="button"
-              className="px-3 py-1 rounded-md border hover:bg-gray-50"
-            >
-              Close
-            </button>
-          </div>
+                  <td className="border-b border-[#2D3748]">
+                    <div className="gap-2 flex items-center justify-between m-2 w-60">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openUpdate(c.id);
+                        }}
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] text-black font-semibold"
+                      >
+                        Update
+                      </button>
 
-          <CreateCategoryAside onSuccess={() => setIsCreateOpen(false)} />
-        </aside>
-      )}
-    </div>
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={ (e) => {
+                          e.stopPropagation();
+                          openDelete(c.id);
+                        }}
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] text-black font-semibold"
+                      >
+                        Delete
+                      </button>
+                      <DeleteConfirm onClose={closeDelete} isOpen={isDeleteOpen} isLoading={isDeleting} onConfirm={confirmDelete}/>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPrev={() => setPage((p) => Math.max(p - 1, 1))}
+            onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
+            onPage={(p) => setPage(p)}
+          />
+          {/* UPDATE ASIDE */}
+          {isUpdateOpen && editId !== null && (
+            <aside className="absolute right-0 top-0 h-screen w-[420px] bg-[#10141C] shadow-sm border p-6 overflow-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Update Category</h2>
+                <button
+                  onClick={closeUpdate}
+                  type="button"
+                  className="brounded-md border bg-white px-2 py-2 text-[13px] text-black font-semibold rounded-md"
+                >
+                  Close
+                </button>
+              </div>
+
+              <UpdateCategoryAside id={editId} onSuccess={closeUpdate} />
+            </aside>
+          )}
+
+          {/* CREATE ASIDE */}
+          {isCreateOpen && (
+            <aside className="absolute right-0 top-0 h-screen w-[420px] bg-[#10141C] shadow-sm border p-6 overflow-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Create Category</h2>
+                <button
+                  onClick={() => setIsCreateOpen(false)}
+                  type="button"
+                  className="brounded-md border bg-white px-2 py-2 text-[13px] text-black font-semibold rounded-md"
+                >
+                  Close
+                </button>
+              </div>
+
+              <CreateCategoryAside onSuccess={() => setIsCreateOpen(false)} />
+            </aside>
+          )}
+        </table>
+      </div>
+
+
+
+
+
+
+
+
+    </>
   );
 };

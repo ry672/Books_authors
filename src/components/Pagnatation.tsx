@@ -41,19 +41,19 @@ export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) 
   const items = getPages(safePage, safeTotalPages);
 
   return (
-    <div className="flex items-center gap-2 my-5 flex-wrap">
+    <div className="flex items-center gap-2 my-5 mx-2 flex-wrap w-60">
       <button
         type="button"
         onClick={onPrev}
         disabled={safePage <= 1}
-        className="px-3 py-2 bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white rounded-md disabled:opacity-50 disabled:hover:bg-gray-200 disabled:hover:text-gray-600"
+        className="rounded-md border border-[#2D3748]  px-2 py-1  hover:bg-white hover:text-black disabled:opacity-50 disabled:hover:bg-gray-900 disabled:hover:text-white text-[14px]"
       >
         Previous
       </button>
 
       {items.map((it, idx) =>
         it === "..." ? (
-          <span key={`dots-${idx}`} className="px-3 py-2 text-gray-500">
+          <span key={`dots-${idx}`} className="rounded-md border border-[#2D3748]  text-[14px] px-2 py-1  hover:bg-white hover:text-black disabled:opacity-50 disabled:hover:bg-gray-900 disabled:hover:text-white">
             ...
           </span>
         ) : (
@@ -64,8 +64,8 @@ export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) 
             onClick={() => onPage(it)}
             className={
               it === safePage
-                ? "px-3 py-2 rounded-md bg-blue-500 text-white font-semibold disabled:opacity-100"
-                : "px-3 py-2 rounded-md bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white"
+                ? "rounded-md border border-[#2D3748]  text-[14px] px-2 py-1 text-black bg-white disabled:opacity-100"
+                : "px-3 py-2 rounded-md bg-gray-200 text-gray-600 font-medium hover:bg-gray-900 hover:text-white"
             }
           >
             {it}
@@ -77,7 +77,7 @@ export const Pagination = ({ page, totalPages, onPrev, onNext, onPage }: Props) 
         type="button"
         onClick={onNext}
         disabled={safePage >= safeTotalPages}
-        className="px-3 py-2 bg-gray-200 text-gray-600 font-medium hover:bg-blue-500 hover:text-white rounded-md disabled:opacity-50 disabled:hover:bg-gray-200 disabled:hover:text-gray-600"
+        className="rounded-md border border-[#2D3748]  text-[14px] px-2 py-1  hover:bg-white hover:text-black disabled:opacity-50 disabled:hover:bg-gray-900 disabled:hover:text-white"
       >
         Next
       </button>

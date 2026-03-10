@@ -24,6 +24,7 @@ export type GetCategoriesArgs = {
   page?: number;
   take?: number;
 };
+
 export interface CategoryPayload {
   count: number;
   page: number;
@@ -39,20 +40,25 @@ export const categoryApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
   tagTypes: ["Categories", "Category", "Books"],
   endpoints: (builder) => ({
-    getCategory: builder.query<CategoryPayload, GetCategoriesArgs>({
-      query: ({ search, name, page, take }) => ({
+    getCategory: builder.query<CategoryPayload, GetCategoriesArgs | void>({
+      query: (args) => ({
         url: "/category",
         method: "GET",
         params: {
-          ...(search ? { search } : {}),
-          ...(name ? { name } : {}),
-          ...(page ? { page } : {}),
-          ...(take ? { take } : {}),
+          ...(args?.search ? { search: args.search } : {}),
+          ...(args?.name ? { name: args.name } : {}),
+          ...(args?.page ? { page: args.page } : {}),
+          ...(args?.take ? { take: args.take } : {}),
         },
-        page,
-        take
       }),
-      providesTags: ["Categories", "Books"],
+      providesTags: (result) => [
+        "Categories",
+        "Books",
+        ...(result?.rows?.map((category) => ({
+          type: "Category" as const,
+          id: category.id,
+        })) ?? []),
+      ],
       keepUnusedDataFor: 300,
     }),
 
@@ -67,7 +73,7 @@ export const categoryApi = createApi({
 
     postCategory: builder.mutation<CategoryResponse, CategoryRequest>({
       query: (payload) => ({
-        url: "/category", 
+        url: "/category",
         method: "POST",
         body: payload,
       }),
@@ -82,13 +88,14 @@ export const categoryApi = createApi({
       }),
       invalidatesTags: (_res, _err, { id }) => [
         "Categories",
-        { type: "Category", id },{type: "Books", id: "List"}
+        "Books",
+        { type: "Category", id },
       ],
     }),
 
     deleteCategory: builder.mutation<{ message: string }, number>({
       query: (id) => ({
-        url: `/category/${id}/soft`, 
+        url: `/category/${id}/soft`,
         method: "DELETE",
       }),
       invalidatesTags: ["Categories", "Books"],

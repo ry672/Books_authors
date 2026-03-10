@@ -33,10 +33,11 @@ export interface AuthorPayload {
 
 export type GetAuthorsArgs = {
   search?: string;
-  page: number;
-  take: number;
+  page?: number;
+  take?: number;
   name?: string;
   full_name?: string;
+  country?: string;
 };
 
 export type PatchAuthorsArgs = {
@@ -49,17 +50,27 @@ const API_BASE_URL = import.meta.env.VITE_EXCHANGE_API_BASE_URL;
 export const authorApi = createApi({
   reducerPath: "authorApi",
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-  tagTypes: ["Authors", "Author"],
+  tagTypes: ["Authors", "Author", "Books"],
 
   endpoints: (builder) => ({
     postAuthor: builder.mutation<AuthorResponse, AuthorCreateArgs>({
       query: (payload) => {
         const formData = new FormData();
+
         formData.append("name", payload.name);
         formData.append("full_name", payload.full_name);
-        if (payload.description) formData.append("description", payload.description);
-        if (payload.country) formData.append("country", payload.country);
-        if (payload.file) formData.append("file", payload.file);
+
+        if (payload.description) {
+          formData.append("description", payload.description);
+        }
+
+        if (payload.country) {
+          formData.append("country", payload.country);
+        }
+
+        if (payload.file) {
+          formData.append("file", payload.file);
+        }
 
         return {
           url: "/author",
@@ -70,19 +81,26 @@ export const authorApi = createApi({
       invalidatesTags: ["Authors"],
     }),
 
-    getAuthor: builder.query<AuthorPayload, GetAuthorsArgs>({
-      query: ({ search, page, take, name, full_name }) => ({
+    getAuthor: builder.query<AuthorPayload, GetAuthorsArgs | void>({
+      query: (args) => ({
         url: "/author",
         method: "GET",
         params: {
-          ...(search ? { search } : {}),
-          ...(name ? { name } : {}),
-          ...(full_name ? { full_name } : {}),
-          page,
-          take,
+          ...(args?.search ? { search: args.search } : {}),
+          ...(args?.name ? { name: args.name } : {}),
+          ...(args?.full_name ? { full_name: args.full_name } : {}),
+          ...(args?.country ? {country: args.country}: {}),
+          ...(args?.page ? { page: args.page } : {}),
+          ...(args?.take ? { take: args.take } : {}),
         },
       }),
-      providesTags: ["Authors"],
+      providesTags: (result) => [
+        "Authors",
+        ...(result?.rows?.map((author) => ({
+          type: "Author" as const,
+          id: author.id,
+        })) ?? []),
+      ],
       keepUnusedDataFor: 300,
     }),
 
@@ -91,7 +109,7 @@ export const authorApi = createApi({
         url: `/author/${id}`,
         method: "GET",
       }),
-      providesTags: (_res, _err, id) => [{ type: "Author", id }],
+      providesTags: (_res, _err, id) => [{ type: "Author", id },{ type: "Books", id: "LIST" }],
       keepUnusedDataFor: 300,
     }),
 
@@ -99,11 +117,25 @@ export const authorApi = createApi({
       query: ({ id, data }) => {
         const formData = new FormData();
 
-        if (data.name !== undefined) formData.append("name", data.name);
-        if (data.full_name !== undefined) formData.append("full_name", data.full_name);
-        if (data.description !== undefined) formData.append("description", data.description);
-        if (data.country !== undefined) formData.append("country", data.country);
-        if (data.file) formData.append("file", data.file);
+        if (data.name !== undefined) {
+          formData.append("name", data.name);
+        }
+
+        if (data.full_name !== undefined) {
+          formData.append("full_name", data.full_name);
+        }
+
+        if (data.description !== undefined) {
+          formData.append("description", data.description);
+        }
+
+        if (data.country !== undefined) {
+          formData.append("country", data.country);
+        }
+
+        if (data.file) {
+          formData.append("file", data.file);
+        }
 
         return {
           url: `/author/${id}`,
@@ -114,15 +146,17 @@ export const authorApi = createApi({
       invalidatesTags: (_res, _err, { id }) => [
         "Authors",
         { type: "Author", id },
+        { type: "Books", id: "LIST" }
       ],
     }),
-    deleteAuthor: builder.mutation<{message: string}, number> ({
+
+    deleteAuthor: builder.mutation<{ message: string }, number>({
       query: (id) => ({
         url: `/author/${id}/soft`,
-        method: "DELETE"
+        method: "DELETE",
       }),
       invalidatesTags: ["Authors"],
-    }) 
+    }),
   }),
 });
 
@@ -131,5 +165,5 @@ export const {
   useGetAuthorQuery,
   useGetAuthorByIdQuery,
   usePatchAuthorMutation,
-  useDeleteAuthorMutation
+  useDeleteAuthorMutation,
 } = authorApi;

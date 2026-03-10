@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useDispatch } from "react-redux";
@@ -26,9 +26,10 @@ const schema = yup.object({
 export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [postAuthor, { data, isLoading, isSuccess, error }] = usePostAuthorMutation();
   const [file, setFile] = useState<File | null>(null);
-
+  const [preview, setPreview] = useState<string>("")
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const urlRef = useRef<HTMLInputElement|null>(null)
   const {
     handleSubmit,
     control,
@@ -50,6 +51,22 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
     }
   }, [isSuccess, data, dispatch, reset, onSuccess, navigate]);
 
+  useEffect(()=>{
+    if(!file){
+      setPreview("")
+      return
+    } else {
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl)
+
+      return (()=>{
+        URL.revokeObjectURL(objectUrl)
+      })
+    }
+  }, [file])
+
+  
+
   const onSubmit: SubmitHandler<SubmitForm> = async (formData) => {
     try {
       await postAuthor({ ...formData, file }).unwrap();
@@ -57,6 +74,8 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
       console.log("Create author failed:", e);
     }
   };
+  
+
   const backendMessage =
     error && typeof error === "object" && error !== null && "data" in error
       ? (error as any).data?.message
@@ -66,7 +85,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
 
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 bg-[#10141C]">
       <Controller
         name="name"
         control={control}
@@ -74,7 +93,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="name"
               placeholder="Rufina"
               textArea="Name"
@@ -92,7 +111,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="full_name"
               placeholder="Garaeva"
               textArea="Full_Name"
@@ -111,7 +130,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="country"
               placeholder="Tashkent"
               textArea="Country"
@@ -128,7 +147,7 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="description"
               placeholder="About author..."
               textArea="Description"
@@ -143,15 +162,35 @@ export const CreateAuthorAside = ({ onSuccess }: { onSuccess?: () => void }) => 
       <div className="pt-2">
         <label className="text-sm">Avatar</label>
         <input
-          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-teal-500 file:py-2 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
+          ref={urlRef}
+          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-white file:py-2 file:px-4 file:text-sm file:font-semibold file:text-black hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
           type="file"
           accept="image/png,image/jpeg"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
         {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
-      </div>
+        {preview && <img src={preview}/>}
 
-      <ButtonApp buttonText={isLoading ? "Creating..." : "Create"} buttonType="submit" />
+        
+        
+      </div>
+      <button 
+      type="button"
+      onChange={() => setFile(null)}
+      onClick={()=>{
+        
+        setFile(null)
+        setPreview("")
+        if (urlRef.current) {
+          urlRef.current.value=""
+          
+        }
+        
+      }}>Cancel</button>
+      
+      
+
+      <ButtonApp buttonText={isLoading ? "Creating..." : "Create"} buttonType="submit" className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-55"/>
       {backendMessage && (
         <p className="text-sm text-red-600">{String(backendMessage)}</p>
       )}

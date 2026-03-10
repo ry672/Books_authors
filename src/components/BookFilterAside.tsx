@@ -1,8 +1,6 @@
 import React from "react";
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
   onClear: () => void;
 
   search: string;
@@ -13,6 +11,7 @@ type Props = {
 
   price: string;
   setPrice: (v: string) => void;
+
 
   // minPrice: number;
   // setMinPrice: (v: number) => void;
@@ -27,9 +26,8 @@ type Props = {
 };
 
 export const BookFiltersAside: React.FC<Props> = ({
-  isOpen,
-  onClose,
-  onClear,
+
+
   search,
   setSearch,
   name,
@@ -44,39 +42,18 @@ export const BookFiltersAside: React.FC<Props> = ({
   // MAX,
   setPage,
 }) => {
-  if (!isOpen) return null;
+ 
 
   // const exactPriceActive = price.trim().length > 0;
 
   return (
-    <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Filters</h2>
+    
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClear}
-            className="px-3 py-1 rounded-md border hover:bg-gray-50"
-          >
-            Clear
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-1 rounded-md border hover:bg-gray-50"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Search</label>
+      <div className="flex justify-between gap-5 ">
+        {/* Search */}
+      <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-full rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-sm mt-4"
           value={search}
           placeholder="Search..."
           onChange={(e) => {
@@ -86,11 +63,10 @@ export const BookFiltersAside: React.FC<Props> = ({
         />
       </div>
 
-      {/* Name */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Name</label>
+      {/* Name
+      <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-full rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-sm mt-4 "
           value={name}
           placeholder="Filter by name..."
           onChange={(e) => {
@@ -98,13 +74,12 @@ export const BookFiltersAside: React.FC<Props> = ({
             setPage(1);
           }}
         />
-      </div>
+      </div> */}
 
-      {/* Exact price */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Price</label>
+      {/* Exact price
+      <div className="space-y-2">
         <input
-          className="w-full rounded-md h-10 px-4 border-2 border-gray-100 shadow-sm"
+          className="w-full rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-sm mt-4"
           type="number"
           value={price}
           placeholder="Find price..."
@@ -113,7 +88,11 @@ export const BookFiltersAside: React.FC<Props> = ({
             setPage(1);
           }}
         />
-      </div>
+      </div> */}
+
+      {/* <div>
+        <input type="text" />
+      </div> */}
 
       {/* Range */}
       {/* <div className="space-y-3">
@@ -166,6 +145,7 @@ export const BookFiltersAside: React.FC<Props> = ({
           <span className="text-xs w-12 text-right">{maxPrice}</span> */}
         {/* </div> */}
       {/* </div> */}
-    </aside>
+
+      </div>
   );
 };

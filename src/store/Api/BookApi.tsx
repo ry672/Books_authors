@@ -54,7 +54,7 @@ const API_BASE_URL = import.meta.env.VITE_EXCHANGE_API_BASE_URL;
 export const bookApi = createApi({
   reducerPath: "bookApi",
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-  tagTypes: ["Books", "Book", "Category"],
+  tagTypes: ["Books", "Book", "Category", "Authors"],
   endpoints: (builder) => ({
     getBook: builder.query<BookPayload, GetBooksArgs>({
       query: ({ search, page, take, name, price }) => ({
@@ -77,8 +77,9 @@ export const bookApi = createApi({
               { type: "Books", id: "LIST" },
               ...res.rows.map((b) => ({ type: "Book" as const, id: b.id })),
               { type: "Category", id: "LIST" }, 
+              { type: "Authors", id: "LIST" },
             ]
-          : [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }],
+          : [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }, { type: "Authors", id: "LIST" }],
     }),
 
     getBookById: builder.query<BookResponse, number>({
@@ -93,7 +94,7 @@ export const bookApi = createApi({
         body: payload,
       }),
 
-      invalidatesTags: [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }],
+      invalidatesTags: [{ type: "Books", id: "LIST" }, { type: "Category", id: "LIST" }, { type: "Authors", id: "LIST" }],
     }),
 
     patchBook: builder.mutation<BookResponse, PatchBookArgs>({

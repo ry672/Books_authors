@@ -21,7 +21,7 @@ export const ProfileAuthorPage = () => {
 
   return (
     <div className="w-full my-auto py-6 flex flex-col justify-center gap-2">
-      <img src={author.author_photo ? `http://localhost:5000${author.author_photo}` : defaultAvatar}
+      <img src={author.author_photo ? `https://bookaythorsback-production.up.railway.app${author.author_photo}` : defaultAvatar}
         alt="Аватар"
         className="rounded-md lg:w-[12rem] lg:h-[12rem] md:w-[10rem] md:h-[10rem] sm:w-[8rem] sm:h-[8rem] w-[7rem] h-[7rem]  bottom-[3rem]" />
       <h1 className="text-lg font-semibold">{author.name}</h1>

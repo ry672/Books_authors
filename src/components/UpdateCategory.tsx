@@ -83,7 +83,7 @@ export const UpdateCategoryAside = ({
           <>
             <InputApp
               {...field}
-              className="name"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="name"
               placeholder="Fantasy"
               textArea="Name"
@@ -105,6 +105,7 @@ export const UpdateCategoryAside = ({
       <ButtonApp
         buttonText={isSaving ? "Saving..." : "Update"}
         buttonType="submit"
+        className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-130"
       />
     </form>
   );

@@ -5,31 +5,27 @@ import { useNavigate } from "react-router-dom";
 import { CreateBookAside } from "../components/CreateBookPage";
 import { UpdateBookAside } from "../components/UpdateBook";
 import { BookFiltersAside } from "../components/BookFilterAside";
+import plisIcon from "../images/icons8-plus-24.png";
+import { DeleteConfirm } from "../components/DeleteConfirm";
 
 const TAKE = 5;
-
-// // range limits
-// const MIN = 0;
-// const MAX = 100000;
 
 export const BooksPage = () => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
 
-  // asides
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteBook, { isLoading: isDeleting }] = useDeleteBookMutation();
 
-  // filters
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
-  const [price, setPrice] = useState(""); 
-  // const [minPrice, setMinPrice] = useState<number>(MIN);
-  // const [maxPrice, setMaxPrice] = useState<number>(MAX);
+  const [price, setPrice] = useState("");
 
   const exactPrice = useMemo(() => {
     const v = price.trim();
@@ -42,15 +38,8 @@ export const BooksPage = () => {
     search: search.trim() || undefined,
     page,
     take: TAKE,
-
     name: name.trim() || undefined,
-
-    
     price: exactPrice,
-
-    
-    // minPrice: exactPrice === undefined ? minPrice : undefined,
-    // maxPrice: exactPrice === undefined ? maxPrice : undefined,
   });
 
   const totalPages = Math.max(books?.pages ?? 1, 1);
@@ -61,14 +50,12 @@ export const BooksPage = () => {
   }, [page, totalPages]);
 
   const openCreate = () => {
-    setIsFiltersOpen(false);
     setIsUpdateOpen(false);
     setEditId(null);
     setIsCreateOpen(true);
   };
 
   const openUpdate = (id: number) => {
-    setIsFiltersOpen(false);
     setIsCreateOpen(false);
     setEditId(id);
     setIsUpdateOpen(true);
@@ -79,19 +66,31 @@ export const BooksPage = () => {
     setEditId(null);
   };
 
-  const openFilters = () => {
-    setIsCreateOpen(false);
-    setIsUpdateOpen(false);
-    setEditId(null);
-    setIsFiltersOpen(true);
+  const openDelete = (id: number) => {
+    setDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const closeDelete = () => {
+    setDeleteId(null);
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteId === null) return;
+
+    try {
+      await deleteBook(deleteId).unwrap();
+      closeDelete();
+    } catch (e) {
+      console.log("Delete failed", e);
+    }
   };
 
   const clearFilters = () => {
     setSearch("");
     setName("");
     setPrice("");
-    // setMinPrice(MIN);
-    // setMaxPrice(MAX);
     setPage(1);
   };
 
@@ -100,80 +99,131 @@ export const BooksPage = () => {
   };
 
   return (
-    <div className="flex gap-6">
-      {/* MAIN */}
-      <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-gray-300 px-5 py-5 bg-white">
-        {/* top actions */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={openFilters}
-            className="px-4 py-2 rounded-full border shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Filters
-          </button>
+    <>
+      <div className="flex items-end justify-between gap-3 m-4">
+        <BookFiltersAside
+          onClear={clearFilters}
+          search={search}
+          setSearch={setSearch}
+          name={name}
+          setName={setName}
+          price={price}
+          setPrice={setPrice}
+          setPage={setPage}
+        />
 
-          <button
-            type="button"
-            onClick={openCreate}
-            className="px-4 py-2 rounded-full text-green-700/70 bg-green-300/30 hover:bg-green-500/70 hover:text-white text-sm font-semibold"
-          >
-            Create Book
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="flex gap-2 rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
+        >
+          Create
+          <img src={plisIcon} alt="" className="mt-1 h-3 w-3" />
+        </button>
+      </div>
 
-        {/* states */}
-        <div className="mt-4">
-          {isLoading && <div>Loading...</div>}
-          {isError && <div>Error</div>}
+      <div className="overflow-hidden rounded-md border border-[#2D3748]">
+        <table className="w-full border-collapse bg-transparent">
+          <thead>
+            <tr>
+              <th className="w-40 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white">
+                Name
+              </th>
+              <th className="w-30 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white">
+                Price
+              </th>
+              <th className="w-40 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white">
+                Category
+              </th>
+              <th className="w-40 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white">
+                Description
+              </th>
+              <th className="w-40 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white">
+                Authors
+              </th>
+              <th className="w-60 border-b border-[#2D3748] bg-gray-900 px-4 py-2 text-left text-[12px] text-white"></th>
+            </tr>
+          </thead>
 
-          {!isLoading && !isError && (books?.rows?.length ?? 0) === 0 && (
-            <div>No results</div>
-          )}
-        </div>
+          <tbody className="divide-y divide-gray-100">
+            {isLoading && (
+              <tr>
+                <td colSpan={6} className="px-4 py-4 text-white">
+                  Loading...
+                </td>
+              </tr>
+            )}
 
-        {/* list */}
-        <div className="divide-y divide-gray-200 mt-3">
-          {books?.rows
-            ?.filter((b) => b.is_deleted === false)
-            .map((b) => (
-              <div key={b.id} className="p-5 flex items-center justify-between">
-                <div
-                  onClick={() => bookPageClick(b.id)}
-                  className="cursor-pointer whitespace-nowrap text-sm leading-6 font-medium"
-                >
-                  {b.name}
-                </div>
+            {isError && (
+              <tr>
+                <td colSpan={6} className="px-4 py-4 text-red-500">
+                  Error
+                </td>
+              </tr>
+            )}
 
-                <div className="gap-4 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openUpdate(b.id);
-                    }}
-                    className="px-3 py-1 rounded-md border hover:bg-gray-50 text-sm"
+            {!isLoading && !isError && (books?.rows?.length ?? 0) === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-4 text-white">
+                  No results
+                </td>
+              </tr>
+            )}
+
+            {books?.rows
+              ?.filter((b) => b.is_deleted === false)
+              .map((b) => (
+                <tr key={b.id} className="text-gray-500">
+                  <th
+                    onClick={() => bookPageClick(b.id)}
+                    className="cursor-pointer border-b border-[#2D3748] px-4 py-1 text-left text-[12px] text-white"
                   >
-                    Update
-                  </button>
+                    {b.name}
+                  </th>
+                  <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
+                    {b.price}$
+                  </td>
+                  <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
+                    {b.category.name}
+                  </td>
+                  <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
+                    {b.description}
+                  </td>
+                  <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
+                    {b.author.name}
+                  </td>
 
-                  <button
-                    type="button"
-                    disabled={isDeleting}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await deleteBook(b.id).unwrap();
-                    }}
-                    className="px-3 py-1 rounded-md border hover:bg-red-50 text-sm disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-        </div>
+                  <td className="border-b border-[#2D3748]">
+                    <div className="m-2 flex w-60 items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openUpdate(b.id);
+                        }}
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
+                      >
+                        Update
+                      </button>
 
-        {/* pagination */}
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDelete(b.id);
+                        }}
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -183,35 +233,14 @@ export const BooksPage = () => {
         />
       </div>
 
-      {/* FILTERS ASIDE */}
-      <BookFiltersAside
-        isOpen={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
-        onClear={clearFilters}
-        search={search}
-        setSearch={setSearch}
-        name={name}
-        setName={setName}
-        price={price}
-        setPrice={setPrice}
-        // minPrice={minPrice}
-        // setMinPrice={setMinPrice}
-        // maxPrice={maxPrice}
-        // setMaxPrice={setMaxPrice}
-        // MIN={MIN}
-        // MAX={MAX}
-        setPage={setPage}
-      />
-
-      {/* UPDATE ASIDE */}
       {isUpdateOpen && editId !== null && (
-        <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-          <div className="flex items-center justify-between mb-4">
+        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#0B0E14] p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Update Book</h2>
             <button
               onClick={closeUpdate}
               type="button"
-              className="px-3 py-1 rounded-md border hover:bg-gray-50"
+              className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
             >
               Close
             </button>
@@ -221,15 +250,14 @@ export const BooksPage = () => {
         </aside>
       )}
 
-      {/* CREATE ASIDE */}
       {isCreateOpen && (
-        <aside className="w-[420px] shrink-0 sticky top-0 h-screen overflow-auto p-6 bg-white rounded-lg shadow border">
-          <div className="flex items-center justify-between mb-4">
+        <aside className="absolute right-0 top-0 h-screen w-[420px] overflow-auto border bg-[#10141C] p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Create Book</h2>
             <button
               onClick={() => setIsCreateOpen(false)}
               type="button"
-              className="px-3 py-1 rounded-md border hover:bg-gray-50"
+              className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
             >
               Close
             </button>
@@ -238,6 +266,13 @@ export const BooksPage = () => {
           <CreateBookAside onSuccess={() => setIsCreateOpen(false)} />
         </aside>
       )}
-    </div>
+
+      <DeleteConfirm
+        isOpen={isDeleteOpen}
+        isLoading={isDeleting}
+        onClose={closeDelete}
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 };

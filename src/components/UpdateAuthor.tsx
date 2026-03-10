@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
@@ -35,6 +35,9 @@ export const UpdateAuthorAside = ({
     usePatchAuthorMutation();
 
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>("");
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
     handleSubmit,
@@ -54,14 +57,35 @@ export const UpdateAuthorAside = ({
 
   useEffect(() => {
     if (!author) return;
+
     reset({
       name: author.name ?? "",
       full_name: author.full_name ?? "",
       description: author.description ?? "",
       country: author.country ?? "",
     });
+
     setFile(null);
+    setPreview("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }, [author, reset]);
+
+  useEffect(() => {
+    if (!file) {
+      setPreview("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
@@ -79,7 +103,6 @@ export const UpdateAuthorAside = ({
     }
   };
 
-  // ✅ backend message from RTK Query error
   const backendMessage =
     saveError &&
     typeof saveError === "object" &&
@@ -87,6 +110,15 @@ export const UpdateAuthorAside = ({
     "data" in saveError
       ? (saveError as any).data?.message
       : null;
+
+  const handleCancelFile = () => {
+    setFile(null);
+    setPreview("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   if (isLoading) return <div>Loading...</div>;
   if (isError || !author) return <div>Author not found</div>;
@@ -100,7 +132,7 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="name"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="name"
               placeholder="Author name"
               textArea="Name"
@@ -119,7 +151,7 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="full_name"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="full_name"
               placeholder="Full name"
               textArea="Full name"
@@ -138,7 +170,7 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="country"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="country"
               placeholder="Country"
               textArea="Country"
@@ -157,7 +189,7 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="description"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="description"
               placeholder="About author..."
               textArea="Description"
@@ -177,18 +209,34 @@ export const UpdateAuthorAside = ({
 
       <div className="pt-2">
         <label className="text-sm">Avatar</label>
+
         <input
-          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-teal-500 file:py-2 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
+          ref={fileInputRef}
+          className="mt-2 block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-white file:py-2 file:px-4 file:text-sm file:font-semibold file:text-black hover:file:bg-teal-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60"
           type="file"
           accept="image/png,image/jpeg"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
+
         {file && <div className="text-xs mt-1">Selected: {file.name}</div>}
+
+        {preview && (
+          <img
+            src={preview}
+            alt="Preview"
+            className="mt-2 h-24 w-24 rounded-md object-cover"
+          />
+        )}
       </div>
+
+      <button type="button" onClick={handleCancelFile}>
+        Cancel
+      </button>
 
       <ButtonApp
         buttonText={isSaving ? "Saving..." : "Update"}
         buttonType="submit"
+        className="rounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full mx-2 mt-5"
       />
     </form>
   );

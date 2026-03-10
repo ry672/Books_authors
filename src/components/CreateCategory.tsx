@@ -69,7 +69,7 @@ export const CreateCategoryAside = ({
           <>
             <InputApp
               {...field}
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-black focus:outline-none"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px]  px-2 py-1"
               classId="name"
               placeholder="Fantasy"
               textArea="Category name"
@@ -90,6 +90,7 @@ export const CreateCategoryAside = ({
       <ButtonApp
         buttonText={isLoading ? "Creating..." : "Create"}
         buttonType="submit"
+        className="brounded-md border bg-white px-2 py-2 text-[14px] text-black font-semibold w-full rounded-md mx-2 mt-130"
       />
     </form>
   );
