@@ -129,7 +129,7 @@ export const UpdateBookAside = ({
         control={control}
         render={({ field }) => (
           <>
-            <InputApp {...field} className="name" classId="name" placeholder="Clean Code" textArea="Name" />
+            <InputApp {...field} className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1" classId="name" placeholder="Clean Code" textArea="Name" />
             {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
           </>
         )}
@@ -140,7 +140,7 @@ export const UpdateBookAside = ({
         control={control}
         render={({ field }) => (
           <>
-            <InputApp {...field} className="link" classId="link" placeholder="https://example.com" textArea="Link" />
+            <InputApp {...field} className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1" classId="link" placeholder="https://example.com" textArea="Link" />
             {errors.link && <p className="text-xs text-red-600">{errors.link.message}</p>}
           </>
         )}
@@ -153,7 +153,7 @@ export const UpdateBookAside = ({
           <>
             <InputApp
               {...field}
-              className="price"
+              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
               classId="price"
               placeholder="100"
               textArea="Price"
@@ -169,7 +169,7 @@ export const UpdateBookAside = ({
         control={control}
         render={({ field }) => (
           <>
-            <InputApp {...field} className="description" classId="description" placeholder="About book..." textArea="Description" />
+            <InputApp {...field} className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1" classId="description" placeholder="About book..." textArea="Description" />
             {errors.description && (
               <p className="text-xs text-red-600">{errors.description.message}</p>
             )}
