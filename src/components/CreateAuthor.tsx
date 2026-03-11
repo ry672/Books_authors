@@ -42,7 +42,7 @@ export const CreateAuthorAside = ({
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SubmitForm>({
     defaultValues: {
       name: "",
@@ -108,9 +108,7 @@ export const CreateAuthorAside = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-
     if (!selectedFile) return;
-
     setFile(selectedFile);
   };
 
@@ -127,6 +125,8 @@ export const CreateAuthorAside = ({
     error && typeof error === "object" && error !== null && "data" in error
       ? String((error as { data?: { message?: string } }).data?.message ?? "")
       : null;
+
+  const loading = isSubmitting || isLoading;
 
   return (
     <form
@@ -226,7 +226,8 @@ export const CreateAuthorAside = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+            disabled={loading}
+            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:opacity-50"
           >
             Choose file
           </button>
@@ -248,7 +249,8 @@ export const CreateAuthorAside = ({
           <button
             type="button"
             onClick={handleCancelFile}
-            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+            disabled={loading}
+            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:opacity-50"
           >
             Cancel
           </button>
@@ -256,9 +258,9 @@ export const CreateAuthorAside = ({
       </div>
 
       <ButtonApp
-        buttonText={isLoading ? "Creating..." : "Create"}
+        buttonText={loading ? "Creating..." : "Create"}
         buttonType="submit"
-        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black"
+        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black disabled:opacity-50"
       />
 
       {backendMessage && (
