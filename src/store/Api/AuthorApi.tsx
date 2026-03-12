@@ -5,22 +5,14 @@ export interface AuthorResponse {
   id: number;
   name: string;
   full_name: string;
-  description: string;
-  country: string;
-  is_deleted: boolean;
-  author_photo?: string;
-  updatedAt: string;
-  createdAt: string;
-  book: BookResponse[];
-}
-
-export type AuthorCreateArgs = {
-  name: string;
-  full_name: string;
   description?: string;
   country?: string;
-  author_photo?: string;
-};
+  is_deleted: boolean;
+  author_photo?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  books: BookResponse[];
+}
 
 export interface AuthorPayload {
   count: number;
@@ -37,26 +29,76 @@ export type GetAuthorsArgs = {
   name?: string;
   full_name?: string;
   country?: string;
+  description?: string;
+};
+
+export type AuthorFormValues = {
+  name: string;
+  full_name: string;
+  description?: string;
+  country?: string;
+  remove_photo?: string;
+};
+
+export type CreateAuthorRequest = {
+  data: AuthorFormValues;
+  file?: File | null;
 };
 
 export type PatchAuthorsArgs = {
   id: number;
-  data: Partial<AuthorCreateArgs>;
+  data: Partial<AuthorFormValues>;
+  file?: File | null;
 };
 
 const API_BASE_URL = import.meta.env.VITE_EXCHANGE_API_BASE_URL;
 
+const buildAuthorFormData = (
+  data: Partial<AuthorFormValues>,
+  file?: File | null
+) => {
+  const formData = new FormData();
+
+  if (data.name !== undefined) {
+    formData.append("name", data.name.trim());
+  }
+
+  if (data.full_name !== undefined) {
+    formData.append("full_name", data.full_name.trim());
+  }
+
+  if (data.description !== undefined) {
+    formData.append("description", data.description.trim());
+  }
+
+  if (data.country !== undefined) {
+    formData.append("country", data.country.trim());
+  }
+
+  if (data.remove_photo !== undefined) {
+    formData.append("remove_photo", data.remove_photo);
+  }
+
+  if (file) {
+    formData.append("file", file);
+  }
+
+  return formData;
+};
+
 export const authorApi = createApi({
   reducerPath: "authorApi",
-  baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
-  tagTypes: ["Authors", "Author", "Books"],
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE_URL,
+  }),
+  tagTypes: ["Authors", "Author"],
 
   endpoints: (builder) => ({
-    postAuthor: builder.mutation<AuthorResponse, AuthorCreateArgs>({
-      query: (payload) => ({
+    postAuthor: builder.mutation<AuthorResponse, CreateAuthorRequest>({
+      query: ({ data, file }) => ({
         url: "/author",
         method: "POST",
-        body: payload,
+        body: buildAuthorFormData(data, file),
       }),
       invalidatesTags: ["Authors"],
     }),
@@ -70,13 +112,14 @@ export const authorApi = createApi({
           ...(args?.name ? { name: args.name } : {}),
           ...(args?.full_name ? { full_name: args.full_name } : {}),
           ...(args?.country ? { country: args.country } : {}),
+          ...(args?.description ? { description: args.description } : {}),
           ...(args?.page ? { page: args.page } : {}),
           ...(args?.take ? { take: args.take } : {}),
         },
       }),
       providesTags: (result) => [
         "Authors",
-        ...(result?.rows?.map((author) => ({
+        ...(result?.rows.map((author) => ({
           type: "Author" as const,
           id: author.id,
         })) ?? []),
@@ -89,23 +132,19 @@ export const authorApi = createApi({
         url: `/author/${id}`,
         method: "GET",
       }),
-      providesTags: (_res, _err, id) => [
-        { type: "Author", id },
-        { type: "Books", id: "LIST" },
-      ],
+      providesTags: (_result, _error, id) => [{ type: "Author", id }],
       keepUnusedDataFor: 300,
     }),
 
     patchAuthor: builder.mutation<AuthorResponse, PatchAuthorsArgs>({
-      query: ({ id, data }) => ({
+      query: ({ id, data, file }) => ({
         url: `/author/${id}`,
         method: "PATCH",
-        body: data,
+        body: buildAuthorFormData(data, file),
       }),
-      invalidatesTags: (_res, _err, { id }) => [
+      invalidatesTags: (_result, _error, { id }) => [
         "Authors",
         { type: "Author", id },
-        { type: "Books", id: "LIST" },
       ],
     }),
 

@@ -8,7 +8,6 @@ import {
 import { InputApp } from "./UX/InputApp";
 import { ButtonApp } from "./UX/ButtonApp";
 import * as yup from "yup";
-import { uploadToImageKit } from "../imageKit/imageKit";
 import defaultAvatar from "../images/icons8-user-default-64.png";
 
 type FormValues = {
@@ -37,7 +36,8 @@ export const UpdateAuthorAside = ({
     usePatchAuthorMutation();
 
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>("");
+  const [preview, setPreview] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -46,7 +46,7 @@ export const UpdateAuthorAside = ({
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -91,70 +91,79 @@ export const UpdateAuthorAside = ({
     };
   }, [file]);
 
+  const loading = isSaving || isSubmitting || isLocked;
+
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    if (!author) return;
+    if (!author || loading) return;
+
+    setIsLocked(true);
 
     try {
-      let author_photo: string | undefined = author.author_photo;
-
-      if (removeCurrentImage) {
-        author_photo = "";
-      }
-
-      if (file) {
-        const uploaded = await uploadToImageKit(file);
-        author_photo =
-          typeof uploaded?.url === "string"
-            ? uploaded.url.replace(/^https(?=\/\/ik\.imagekit\.io)/, "https:")
-            : author.author_photo;
-      }
-
       await patchAuthor({
         id,
         data: {
           ...values,
-          author_photo,
+          remove_photo: removeCurrentImage ? "true" : undefined,
         },
+        file,
       }).unwrap();
+
+      setFile(null);
+      setPreview("");
+      setRemoveCurrentImage(false);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
       onSuccess?.();
     } catch (e) {
       console.log("Update author failed:", e);
+    } finally {
+      setIsLocked(false);
     }
   };
 
   const currentImage = useMemo(() => {
-    if (removeCurrentImage) return "";
-    if (!author?.author_photo) return defaultAvatar;
-
-    const normalizedPhoto = author.author_photo.replace(
-      /^https(?=\/\/)/,
-      "https:"
-    );
+    if (preview) return preview;
+    if (removeCurrentImage) return defaultAvatar;
+    if (!author?.author_photo?.trim()) return defaultAvatar;
 
     if (
-      normalizedPhoto.startsWith("http://") ||
-      normalizedPhoto.startsWith("https://")
+      author.author_photo.startsWith("http://") ||
+      author.author_photo.startsWith("https://")
     ) {
-      return normalizedPhoto;
+      return author.author_photo;
     }
 
-    const baseUrl =
-      import.meta.env.VITE_SERVER_URL ||
-      "https://bookaythorsback-production.up.railway.app";
+    const baseUrl = import.meta.env.VITE_SERVER_URL?.replace(/\/$/, "") ?? "";
+    const normalizedPhoto = author.author_photo.startsWith("/")
+      ? author.author_photo
+      : `/${author.author_photo}`;
 
-    return `${baseUrl}${normalizedPhoto.startsWith("/") ? "" : "/"}${normalizedPhoto}`;
-  }, [author, removeCurrentImage]);
+    return `${baseUrl}${normalizedPhoto}`;
+  }, [author, preview, removeCurrentImage]);
 
   const backendMessage =
     saveError &&
     typeof saveError === "object" &&
     saveError !== null &&
     "data" in saveError
-      ? String((saveError as { data?: { message?: string } }).data?.message ?? "")
+      ? Array.isArray(
+          (saveError as { data?: { message?: string | string[] } }).data
+            ?.message
+        )
+        ? (
+            saveError as { data?: { message?: string[] } }
+          ).data?.message?.join(", ")
+        : String(
+            (saveError as { data?: { message?: string } }).data?.message ?? ""
+          )
       : null;
 
   const handleCancelFile = () => {
+    if (loading) return;
+
     setFile(null);
     setPreview("");
 
@@ -164,15 +173,18 @@ export const UpdateAuthorAside = ({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+    if (loading) return;
 
+    const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
     setRemoveCurrentImage(false);
     setFile(selectedFile);
   };
 
-  const handleDeleteImage = () => {
+  const handleDeleteCurrentImage = () => {
+    if (loading) return;
+
     setFile(null);
     setPreview("");
     setRemoveCurrentImage(true);
@@ -194,7 +206,8 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="name"
               placeholder="Author name"
               textArea="Name"
@@ -213,7 +226,8 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="full_name"
               placeholder="Full name"
               textArea="Full name"
@@ -232,7 +246,8 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="country"
               placeholder="Country"
               textArea="Country"
@@ -251,7 +266,8 @@ export const UpdateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="description"
               placeholder="About author..."
               textArea="Description"
@@ -275,16 +291,18 @@ export const UpdateAuthorAside = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
           onChange={handleFileChange}
           className="hidden"
+          disabled={loading}
         />
 
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+            disabled={loading}
+            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             Choose file
           </button>
@@ -294,25 +312,24 @@ export const UpdateAuthorAside = ({
           </span>
         </div>
 
-        {(preview || currentImage) && (
-          <img
-            src={preview || currentImage}
-            alt="Preview"
-            className="mt-2 h-24 w-24 rounded-md object-cover"
-            onError={(e) => {
-              e.currentTarget.src = defaultAvatar;
-            }}
-          />
-        )}
+        <img
+          src={currentImage}
+          alt="Preview"
+          className="mt-2 h-24 w-24 rounded-md object-cover"
+          onError={(e) => {
+            e.currentTarget.src = defaultAvatar;
+          }}
+        />
 
         <div className="mt-2 flex gap-2">
-          {!!author.author_photo && !removeCurrentImage && (
+          {!!author.author_photo && !removeCurrentImage && !file && (
             <button
               type="button"
-              onClick={handleDeleteImage}
-              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+              onClick={handleDeleteCurrentImage}
+              disabled={loading}
+              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Delete Image
+              Delete current image
             </button>
           )}
 
@@ -320,18 +337,20 @@ export const UpdateAuthorAside = ({
             <button
               type="button"
               onClick={handleCancelFile}
-              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black"
+              disabled={loading}
+              className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel
+              Cancel file
             </button>
           )}
         </div>
       </div>
 
       <ButtonApp
-        buttonText={isSaving ? "Saving..." : "Update"}
+        buttonText={loading ? "Saving..." : "Update"}
         buttonType="submit"
-        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black"
+        disabled={loading}
+        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
       />
     </form>
   );

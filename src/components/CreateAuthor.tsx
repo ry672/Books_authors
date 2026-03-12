@@ -7,7 +7,6 @@ import { setAuthor } from "../store/Slice/authorSlice";
 import { InputApp } from "../components/UX/InputApp";
 import { ButtonApp } from "../components/UX/ButtonApp";
 import { useNavigate } from "react-router-dom";
-import { uploadToImageKit } from "../imageKit/imageKit";
 import * as yup from "yup";
 
 interface SubmitForm {
@@ -29,10 +28,12 @@ export const CreateAuthorAside = ({
 }: {
   onSuccess?: () => void;
 }) => {
-  const [postAuthor, { data, isLoading, isSuccess, error }] =
+  const [postAuthor, { isLoading: isCreating, error }] =
     usePostAuthorMutation();
+
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>("");
+  const [preview, setPreview] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -55,22 +56,6 @@ export const CreateAuthorAside = ({
   });
 
   useEffect(() => {
-    if (!isSuccess || !data) return;
-
-    dispatch(setAuthor(data));
-    reset();
-    setFile(null);
-    setPreview("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-
-    onSuccess?.();
-    navigate("/author-page");
-  }, [isSuccess, data, dispatch, reset, onSuccess, navigate]);
-
-  useEffect(() => {
     if (!file) {
       setPreview("");
       return;
@@ -85,34 +70,47 @@ export const CreateAuthorAside = ({
   }, [file]);
 
   const onSubmit: SubmitHandler<SubmitForm> = async (formData) => {
+    if (isLocked || isCreating || isSubmitting) return;
+
+    setIsLocked(true);
+
     try {
-      let author_photo: string | undefined;
+      const createdAuthor = await postAuthor({
+        data: formData,
+        file,
+      }).unwrap();
 
-      if (file) {
-        const uploaded = await uploadToImageKit(file);
+      dispatch(setAuthor(createdAuthor));
 
-        author_photo =
-          typeof uploaded?.url === "string"
-            ? uploaded.url.replace(/^https(?=\/\/ik\.imagekit\.io)/, "https:")
-            : undefined;
+      reset();
+      setFile(null);
+      setPreview("");
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
 
-      await postAuthor({
-        ...formData,
-        author_photo,
-      }).unwrap();
+      onSuccess?.();
+      navigate("/author-page");
     } catch (e) {
       console.log("Create author failed:", e);
+    } finally {
+      setIsLocked(false);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (loading) return;
+
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
+
     setFile(selectedFile);
   };
 
   const handleCancelFile = () => {
+    if (loading) return;
+
     setFile(null);
     setPreview("");
 
@@ -123,10 +121,18 @@ export const CreateAuthorAside = ({
 
   const backendMessage =
     error && typeof error === "object" && error !== null && "data" in error
-      ? String((error as { data?: { message?: string } }).data?.message ?? "")
+      ? Array.isArray(
+          (error as { data?: { message?: string | string[] } }).data?.message
+        )
+        ? (
+            error as { data?: { message?: string[] } }
+          ).data?.message?.join(", ")
+        : String(
+            (error as { data?: { message?: string } }).data?.message ?? ""
+          )
       : null;
 
-  const loading = isSubmitting || isLoading;
+  const loading = isSubmitting || isCreating || isLocked;
 
   return (
     <form
@@ -140,7 +146,8 @@ export const CreateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="name"
               placeholder="Rufina"
               textArea="Name"
@@ -159,10 +166,11 @@ export const CreateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="full_name"
               placeholder="Garaeva"
-              textArea="Full_Name"
+              textArea="Full Name"
             />
             {errors.full_name && (
               <p className="text-xs text-red-600">{errors.full_name.message}</p>
@@ -178,7 +186,8 @@ export const CreateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="country"
               placeholder="Tashkent"
               textArea="Country"
@@ -197,7 +206,8 @@ export const CreateAuthorAside = ({
           <>
             <InputApp
               {...field}
-              className="bg-gray-900 rounded-md border border-[#2D3748] placeholder:text-[14px] px-2 py-1"
+              disabled={loading}
+              className="rounded-md border border-[#2D3748] bg-gray-900 px-2 py-1 placeholder:text-[14px]"
               classId="description"
               placeholder="About author..."
               textArea="Description"
@@ -217,9 +227,10 @@ export const CreateAuthorAside = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
           onChange={handleFileChange}
           className="hidden"
+          disabled={loading}
         />
 
         <div className="flex items-center gap-3">
@@ -227,7 +238,7 @@ export const CreateAuthorAside = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
-            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:opacity-50"
+            className="rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             Choose file
           </button>
@@ -250,7 +261,7 @@ export const CreateAuthorAside = ({
             type="button"
             onClick={handleCancelFile}
             disabled={loading}
-            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:opacity-50"
+            className="mt-2 rounded-md border bg-white px-3 py-2 text-[12px] font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
@@ -260,7 +271,8 @@ export const CreateAuthorAside = ({
       <ButtonApp
         buttonText={loading ? "Creating..." : "Create"}
         buttonType="submit"
-        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black disabled:opacity-50"
+        disabled={loading}
+        className="mx-2 mt-5 w-full rounded-md border bg-white px-2 py-2 text-[14px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {backendMessage && (

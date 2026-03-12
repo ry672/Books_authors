@@ -14,36 +14,35 @@ import { UpdateAuthorAside } from "../components/UpdateAuthor";
 
 export const AuthorPage = () => {
   const [page, setPage] = useState(1);
+  const [take, setTake] = useState(5);
+  const [search, setSearch] = useState("");
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-
-  const navigate = useNavigate();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const [editId, setEditId] = useState<number | null>(null);
-  const [deleteAuthor, { isLoading: isDeleting }] = useDeleteAuthorMutation();
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [take, setTake] = useState(5);
 
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const [deleteAuthor, { isLoading: isDeleting }] = useDeleteAuthorMutation();
 
   const queryArgs = useMemo(
     () => ({
       search: search.trim() || undefined,
       page,
-      take: take,
+      take,
     }),
     [search, page, take]
   );
 
   const { data, isLoading, isError } = useGetAuthorQuery(queryArgs);
-
   const totalPages = Math.max(data?.pages ?? 1, 1);
 
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-    if (page < 1) setPage(1);
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
   }, [page, totalPages]);
 
   const authorPageClick = (id: number) => {
@@ -67,6 +66,10 @@ export const AuthorPage = () => {
     setIsCreateOpen(true);
   };
 
+  const closeCreate = () => {
+    setIsCreateOpen(false);
+  };
+
   const openDelete = (id: number) => {
     setDeleteId(id);
     setIsDeleteOpen(true);
@@ -88,20 +91,19 @@ export const AuthorPage = () => {
     }
   };
 
-  const getAuthorImageUrl = (photo?: string) => {
-    if (!photo) return defaultAvatar;
-
-    const normalizedPhoto = photo.replace(/^https(?=\/\/)/, "https:");
-
-    if (
-      normalizedPhoto.startsWith("http://") ||
-      normalizedPhoto.startsWith("https://")
-    ) {
-      return normalizedPhoto;
+  const getAuthorImageUrl = (photo?: string | null) => {
+    if (!photo?.trim()) {
+      return defaultAvatar;
     }
 
-    return `${import.meta.env.VITE_SERVER_URL}${normalizedPhoto.startsWith("/") ? "" : "/"
-      }${normalizedPhoto}`;
+    if (photo.startsWith("http://") || photo.startsWith("https://")) {
+      return photo;
+    }
+
+    const baseUrl = import.meta.env.VITE_SERVER_URL?.replace(/\/$/, "") ?? "";
+    const normalizedPhoto = photo.startsWith("/") ? photo : `/${photo}`;
+
+    return `${baseUrl}${normalizedPhoto}`;
   };
 
   return (
@@ -171,7 +173,7 @@ export const AuthorPage = () => {
               </tr>
             )}
 
-            {!isLoading && !isError && (data?.rows?.length ?? 0) === 0 && (
+            {!isLoading && !isError && (data?.rows.length ?? 0) === 0 && (
               <tr>
                 <td
                   colSpan={6}
@@ -184,81 +186,79 @@ export const AuthorPage = () => {
 
             {!isLoading &&
               !isError &&
-              data?.rows
-                ?.filter((a) => a.is_deleted === false)
-                .map((a) => (
-                  <tr
-                    key={a.id}
-                    className="cursor-pointer text-gray-500 hover:bg-[#161B22]"
+              data?.rows.map((author) => (
+                <tr
+                  key={author.id}
+                  className="cursor-pointer text-gray-500 hover:bg-[#161B22]"
+                >
+                  <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
+                    <img
+                      src={getAuthorImageUrl(author.author_photo)}
+                      alt="Avatar"
+                      className="h-10 w-10 rounded-full object-cover"
+                      onClick={() => authorPageClick(author.id)}
+                      onError={(e) => {
+                        e.currentTarget.src = defaultAvatar;
+                      }}
+                    />
+                  </td>
+
+                  <td
+                    className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                    onClick={() => authorPageClick(author.id)}
                   >
-                    <td className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white">
-                      <img
-                        src={getAuthorImageUrl(a.author_photo)}
-                        alt="Avatar"
-                        className="h-10 w-10 rounded-full object-cover"
-                        onClick={() => authorPageClick(a.id)}
-                        onError={(e) => {
-                          e.currentTarget.src = defaultAvatar;
+                    {author.name}
+                  </td>
+
+                  <td
+                    className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                    onClick={() => authorPageClick(author.id)}
+                  >
+                    {author.full_name}
+                  </td>
+
+                  <td
+                    className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                    onClick={() => authorPageClick(author.id)}
+                  >
+                    {author.country ?? "-"}
+                  </td>
+
+                  <td
+                    className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
+                    onClick={() => authorPageClick(author.id)}
+                  >
+                    {author.description ?? "-"}
+                  </td>
+
+                  <td className="border-b border-[#2D3748] px-4 py-2">
+                    <div className="flex w-60 items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openUpdate(author.id);
                         }}
-                      />
-                    </td>
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
+                      >
+                        Update
+                      </button>
 
-                    <td
-                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
-                      onClick={() => authorPageClick(a.id)}
-                    >
-                      {a.name}
-                    </td>
-
-                    <td
-                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
-                      onClick={() => authorPageClick(a.id)}
-                    >
-                      {a.full_name}
-                    </td>
-
-                    <td
-                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
-                      onClick={() => authorPageClick(a.id)}
-                    >
-                      {a.country}
-                    </td>
-
-                    <td
-                      className="border-b border-[#2D3748] px-4 py-2 text-left text-[12px] text-white"
-                      onClick={() => authorPageClick(a.id)}
-                    >
-                      {a.description}
-                    </td>
-
-                    <td className="border-b border-[#2D3748] px-4 py-2">
-                      <div className="flex w-60 items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUpdate(a.id);
-                          }}
-                          className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
-                        >
-                          Update
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={isDeleting}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDelete(a.id);
-                          }}
-                          className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDelete(author.id);
+                        }}
+                        className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
@@ -275,14 +275,13 @@ export const AuthorPage = () => {
           page={page}
           take={take}
           totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(p - 1, 1))}
-          onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
-          onPage={(p) => setPage(p)}
+          onPrev={() => setPage((prev) => Math.max(prev - 1, 1))}
+          onNext={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          onPage={(value) => setPage(value)}
           onTake={(value) => {
             setTake(value);
             setPage(1);
           }}
-
         />
       </div>
 
@@ -298,8 +297,12 @@ export const AuthorPage = () => {
               Close
             </button>
           </div>
-
-          <UpdateAuthorAside id={editId} onSuccess={() => setIsUpdateOpen(false)} />
+          <UpdateAuthorAside
+            id={editId}
+            onSuccess={() => {
+              closeUpdate();
+            }}
+          />
         </aside>
       )}
 
@@ -309,14 +312,18 @@ export const AuthorPage = () => {
             <h2 className="text-lg font-semibold">Create Author</h2>
             <button
               className="rounded-md border bg-white px-2 py-2 text-[13px] font-semibold text-black"
-              onClick={() => setIsCreateOpen(false)}
+              onClick={closeCreate}
               type="button"
             >
               Close
             </button>
           </div>
 
-          <CreateAuthorAside onSuccess={() => setIsCreateOpen(false)} />
+          <CreateAuthorAside
+            onSuccess={() => {
+              closeCreate();
+            }}
+          />
         </aside>
       )}
     </>

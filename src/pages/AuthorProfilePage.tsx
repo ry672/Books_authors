@@ -15,26 +15,28 @@ export const ProfileAuthorPage = () => {
     navigate(`/book-profile-page/${id}`);
   };
 
-  const getAuthorImageUrl = (photo?: string) => {
-    if (!photo) return defaultAvatar;
+  const getAuthorImageUrl = (photo?: string | null) => {
+    if (!photo?.trim()) return defaultAvatar;
 
-    const normalizedPhoto = photo.replace(/^https(?=\/\/)/, "https:");
-
-    if (
-      normalizedPhoto.startsWith("http://") ||
-      normalizedPhoto.startsWith("https://")
-    ) {
-      return normalizedPhoto;
+    if (photo.startsWith("http://") || photo.startsWith("https://")) {
+      return photo;
     }
 
-    return `${import.meta.env.VITE_SERVER_URL}${
-      normalizedPhoto.startsWith("/") ? "" : "/"
-    }${normalizedPhoto}`;
+    const baseUrl = import.meta.env.VITE_SERVER_URL?.replace(/\/$/, "") ?? "";
+    const normalizedPhoto = photo.startsWith("/") ? photo : `/${photo}`;
+
+    return `${baseUrl}${normalizedPhoto}`;
   };
+
+  if (!id || Number.isNaN(authorId)) {
+    return <div>Invalid author id</div>;
+  }
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error</div>;
   if (!author) return <div>Author not found</div>;
+
+  const books = author.books ?? [];
 
   return (
     <div className="my-auto flex w-full flex-col justify-center gap-2 py-6">
@@ -49,17 +51,17 @@ export const ProfileAuthorPage = () => {
 
       <h1 className="text-lg font-semibold">{author.name}</h1>
       <h2 className="text-lg font-semibold">{author.full_name}</h2>
-      <p className="text-lg font-semibold">{author.country}</p>
-      <p className="text-lg font-semibold">{author.description}</p>
+      <p className="text-lg font-semibold">{author.country ?? "-"}</p>
+      <p className="text-lg font-semibold">{author.description ?? "-"}</p>
 
       <h2 className="chelsea-market-regular mt-5 text-xl font-bold text-[#117278]">
         Books
       </h2>
 
-      {author.book.length === 0 ? (
+      {books.length === 0 ? (
         <div>No books yet</div>
       ) : (
-        author.book.map((b) => (
+        books.map((b) => (
           <div
             key={b.id}
             onClick={() => bookPageClick(b.id)}
